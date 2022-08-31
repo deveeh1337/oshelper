@@ -1,3 +1,4 @@
-[update]
-vers=2
-vers_text=1.01
+{
+  "latest": "1.0 beta",
+  "updateurl": "https://raw.githubusercontent.com/qrlk/moonloader-script-updater/master/minified-example.lua"
+}
