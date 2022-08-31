@@ -23,6 +23,8 @@ local cfg = inicfg.load({
 		active = 0,
 		cheatcode = 'oh',
 		theme = 0,
+		time = 0,
+		weather = 15,
 		cmds = false,
 		armor = false,
 		med = false,
@@ -34,6 +36,7 @@ local cfg = inicfg.load({
 		finv = false,
 		lock = false,
 		autolock = false,
+		timeweather = false,
 		cardlogin = false,
 		spawn = false,
 		prmanager = false,
@@ -60,7 +63,9 @@ local prmwindow = imgui.ImBool(false)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local active = imgui.ImInt(cfg.settings.active)
-local cheatcode = imgui.ImBuffer(256)
+local time = imgui.ImInt(cfg.settings.time)
+local weather = imgui.ImInt(cfg.settings.weather)
+local cheatcode = imgui.ImBuffer(''..cfg.settings.cheatcode, 256)
 local vrmsg1 = imgui.ImBuffer(''..cfg.settings.vrmsg1, 256)
 local vrmsg2 = imgui.ImBuffer(256)
 local vr1 = imgui.ImBool(cfg.settings.vr1)
@@ -93,11 +98,24 @@ local logincard = imgui.ImInt(cfg.settings.logincard)
 local delay = imgui.ImInt(cfg.settings.delay)
 local plusw = imgui.ImBool(cfg.settings.plusw)
 local prmanager = imgui.ImBool(cfg.settings.prmanager)
+local timeweather = imgui.ImBool(cfg.settings.timeweather)
 local pronoroff = false
 local menu = 1
 
 bike = {[481] = true, [509] = true, [510] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
+
+-- update
+update_state = false
+
+local script_vers = 1
+local script_vers_text = "1.00"
+
+local update_url = "https://raw.githubusercontent.com/deveeh/oshelper/master/update.ini" -- тут тоже свою ссылку
+local update_path = getWorkingDirectory() .. "/moonloader/update.ini" -- и тут свою ссылку
+
+local script_url = "https://github.com/deveeh/oshelper/blob/master/oshelper.lua?raw=true" -- тут свою ссылку
+local script_path = thisScript().path
 
 -- functions
 function msg(arg)
@@ -226,11 +244,6 @@ function main()
 				sampSendChat('/fixmycar '..num) 
 			end
 		end) 
-	    sampRegisterChatCommand('pass', function(num) 
-	     	if cmds.v then 
-				sampSendChat('/showpass '..num) 
-			end
-		end)
 		sampRegisterChatCommand('urc', function(num)
 			if cmds.v then  
 				sampSendChat('/unrentcar'..num) 
@@ -260,24 +273,19 @@ function main()
 	elseif ip == '185.169.134.62' and port == 7777 then serverName = 'Rodina RP | Northern District'
 	elseif ip == '185.169.134.108' and port == 7777 then serverName = 'Rodina RP | Eastern District'
 	end
-	downloadUrlToFile(update_url, update_path, function(id, status)
-        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-            updateIni = inicfg.load(nil, update_path)
-            if tonumber(updateIni.update.vers) > script_vers then
-                update_state = true
-            end
-            os.remove(update_path)
-        end
-    end)
     while true do
         wait(0)
+        if timeweather.v then
+      		setTimeOfDay(time.v, 0)
+      		forceWeatherNow(weather.v)
+    	end
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     	if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
         imgui.Process = window.v or prmwindow.v
         -- hotkeys
         if not sampIsCursorActive() then
-        	if mask.v and isKeyDown(0x5A) and wasKeyPressed(0x32) then send('/mask') end
+        	if mask.v and isKeyDown(0x12) and wasKeyPressed(0x32) then send('/mask') end
         	if spawn.v and wasKeyPressed(0x04) then 
         		if not isCharOnFoot(playerPed) then
                 car = storeCarCharIsInNoSave(playerPed)
@@ -304,8 +312,8 @@ function main()
 	     	if rem.v and wasKeyPressed(0x52) then send('/repcar') end
 	     	if fill.v and isKeyDown(0x12) and wasKeyPressed(0x52) then send('/fillcar') end
 	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) send('/faminvite '..id) end
-	     	if fmenu.v and isKeyDown(0x12) and wasKeyPressed(0x46) then send('/fammenu') end
-	     	if lock.v and wasKeyPressed(0x4C) then send('/fammenu') end
+	     	if fmenu.v and wasKeyPressed(0x4F) then send('/fammenu') end
+	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
 	    end
 	    if plusw.v then
 		    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
@@ -352,6 +360,16 @@ function sampev.onSendExitVehicle(id)
 	end
 end
 
+function patch_samp_time_set(enable)
+	if enable and default == nil then
+		default = readMemory(sampGetBase() + 0x9C0A0, 4, true)
+		writeMemory(sampGetBase() + 0x9C0A0, 4, 0x000008C2, true)
+	elseif enable == false and default ~= nil then
+		writeMemory(sampGetBase() + 0x9C0A0, 4, default, true)
+		default = nil
+	end
+end
+
 function piar()
 	lua_thread.create(function()
 			if pronoroff and vr1.v then
@@ -394,6 +412,7 @@ function imgui.OnDrawFrame()
 				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
 				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
 				elseif imgui.Selectable(fa.ICON_FA_USERS..u8' Семья', menu == 3) then menu = 3
+				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' Окружение', menu == 8) then menu = 8
 				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Работа с чатом', menu == 4) then menu = 4
 				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Работа с диалогами', menu == 5) then menu = 5
 				elseif imgui.Selectable(fa.ICON_FA_COG..u8' Настройки', menu == 6) then menu = 6
@@ -405,7 +424,8 @@ function imgui.OnDrawFrame()
 		        		save()
 						msg('Все настройки сохранены.')
 		        	end
-		        else
+		        end
+		        if update_state then
 		        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
 		        		downloadUrlToFile(script_url, script_path, function(id, status)
 			                if status == dlstatus.STATUS_ENDDOWNLOADDATA then
@@ -413,7 +433,7 @@ function imgui.OnDrawFrame()
 			                    thisScript():reload()
 			                end
 			            end)
-						msg('Скрипт обновлен до версии '..updateIni.update.vers_text)
+						--msg('Скрипт обновлен до версии '..updateIni.update.vers_text)
 		        	end
 		        end
 			imgui.EndChild()
@@ -438,9 +458,9 @@ function imgui.OnDrawFrame()
         			imgui.CenterText(u8'Транспорт')
         		imgui.PopFont()
         		imgui.Separator()
-				if imgui.Checkbox(u8'Autolock', autolock) then cfg.settings.autolock = autolock.v end
-				imgui.TextQuestion(u8'Активация: сесть в машину')
-				if imgui.Checkbox(u8'Закрыть двери', lock) then cfg.settings.lock = lock.v end
+				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
+				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
+				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
 				imgui.TextQuestion(u8'Активация: L')
 				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
 				imgui.TextQuestion(u8'Использовать ремкомплект: R')
@@ -448,7 +468,7 @@ function imgui.OnDrawFrame()
 				imgui.TextQuestion(u8'Использовать канистру: ALT + R')
 				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
 				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
-				if imgui.Checkbox(u8'+W dolbaeb', plusw) then cfg.settings.plusw = plusw.v end
+				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
 				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
 
 			end
@@ -458,7 +478,7 @@ function imgui.OnDrawFrame()
         		imgui.PopFont()
 				imgui.Separator()
 				if imgui.Checkbox(u8'Меню семьи', fmenu) then cfg.settings.fmenu = fmenu.v end
-				imgui.TextQuestion(u8'Активация: ALT + F')
+				imgui.TextQuestion(u8'Активация: O')
 				if imgui.Checkbox(u8'Инвайт в семью', finv) then cfg.settings.finv = finv.v end
 				imgui.TextQuestion(u8'Активация: F + 1')
 			end
@@ -472,7 +492,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Сокращенные команды', cmds) then cfg.settings.cmds = cmds.v save() end
 				if imgui.IsItemHovered() then
                     imgui.BeginTooltip()
-                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/pass [id] - /showpass\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo')
+                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo')
                     imgui.EndTooltip()
                 end
 			end
@@ -480,6 +500,7 @@ function imgui.OnDrawFrame()
 				imgui.PushFont(fontsize)
         			imgui.CenterText(u8'Работа с диалогами')
         		imgui.PopFont()
+        			imgui.CenterText(u8'Не работает с новыми диалогами!')
 				imgui.Separator()
 				if imgui.Checkbox(u8'Автологин в банке', cardlogin) then cfg.settings.cardlogin = cardlogin.v end
 				if cardlogin.v then 
@@ -527,7 +548,43 @@ function imgui.OnDrawFrame()
         			imgui.CenterText(u8'Информация')
         		imgui.PopFont()
 				imgui.Separator()
-				imgui.Text(fa.ICON_FA_ADDRESS_CARD..u8' Авторы:') imgui.SameLine() imgui.Link('https://vk.com/deveeh', 'deveeh') imgui.SameLine() imgui.Text(u8'и') imgui.SameLine() imgui.Link('https://vk.com/id746246809', 'casparo')
+				imgui.Text(fa.ICON_FA_ADDRESS_CARD..u8' Авторы:') imgui.SameLine() imgui.Link('https://vk.com/deveeh', 'deveeh') imgui.SameLine() imgui.Text(u8'и') imgui.SameLine() imgui.Link('https://t.me/atimohov', 'casparo')
+			end
+			if menu == 8 then
+				imgui.PushFont(fontsize)
+        			imgui.CenterText(u8'Окружение')
+        		imgui.PopFont()
+				imgui.Separator()
+				if imgui.Checkbox(u8'Редактор времени и погоды', timeweather) then cfg.settings.timeweather = timeweather.v end
+				if timeweather.v then
+					imgui.PushItemWidth(75)
+					imgui.Text(u8'Время: ')
+					imgui.SameLine()
+					imgui.SetCursorPosX(62)
+					if imgui.InputInt(u8'##time', time) then
+						if time.v > 24 then
+							time.v = 24
+							cfg.settings.time = time.v 
+							patch_samp_time_set(true)
+						elseif time.v < 0 then
+							time.v = 0
+							cfg.settings.time = time.v 
+							patch_samp_time_set(true)
+						end
+					end
+					imgui.Text(u8'Погода: ')
+					imgui.SameLine()
+					if imgui.InputInt(u8'##weather', weather) then
+						if weather.v < 0 then
+							weather.v = 0 
+							cfg.settings.weather = weather.v 
+						elseif weather.v > 45 then
+							weather.v = 45 
+							cfg.settings.weather = weather.v
+						end
+
+					end
+				end
 			end
 			imgui.EndChild()
         imgui.End()
@@ -537,7 +594,8 @@ function imgui.OnDrawFrame()
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
     	imgui.Begin('OS Helper##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'PR Manager | Menu penis')
+        			imgui.CenterText(u8'PR Manager | Menu')
+        			imgui.CenterText(u8'Активация /pr')
         	imgui.PopFont()
         	imgui.Separator()
         	if prmanager.v then
@@ -571,7 +629,7 @@ function imgui.OnDrawFrame()
 				imgui.PushItemWidth(40)
 				if imgui.InputInt("##Задержка", delay, 0, 0) then cfg.settings.delay = delay.v end
 				imgui.SameLine() 
-				imgui.Text(u8'сек.')				
+				imgui.Text(u8'сек.')			
 		    else
 		    	imgui.CenterText(u8'Включите в главном меню функцию PR Manager.')
 		    end
@@ -584,18 +642,6 @@ function imgui.OnDrawFrame()
     	imgui.End()
    	end
 end
-
--- update
-update_state = false
-
-local script_vers = 2
-local script_vers_text = "1.01"
-
-local update_url = "https://raw.githubusercontent.com/deveeh/oshelper/master/update.ini" -- тут тоже свою ссылку
-local update_path = getWorkingDirectory() .. "/moonloader/update.ini" -- и тут свою ссылку
-
-local script_url = "https://github.com/deveeh/oshelper/blob/master/oshelper.lua?raw=true" -- тут свою ссылку
-local script_path = thisScript().path
 
 -- theme
 function themeSettings(theme)
