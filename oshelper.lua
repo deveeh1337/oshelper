@@ -421,7 +421,7 @@ function imgui.OnDrawFrame()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
 			if menu == 1 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Персонаж')
+        			imgui.CenterText(u8'Персонаж penis')
         		imgui.PopFont()
         		imgui.Separator()
         		if imgui.Checkbox(u8'Умный бронежилет', armor) then cfg.settings.armor = armor.v end
@@ -588,8 +588,8 @@ end
 -- update
 update_state = false
 
-local script_vers = 1
-local script_vers_text = "1.00"
+local script_vers = 2
+local script_vers_text = "1.01"
 
 local update_url = "https://raw.githubusercontent.com/deveeh/oshelper/master/update.ini" -- тут тоже свою ссылку
 local update_path = getWorkingDirectory() .. "/moonloader/update.ini" -- и тут свою ссылку
