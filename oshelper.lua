@@ -260,6 +260,15 @@ function main()
 	elseif ip == '185.169.134.62' and port == 7777 then serverName = 'Rodina RP | Northern District'
 	elseif ip == '185.169.134.108' and port == 7777 then serverName = 'Rodina RP | Eastern District'
 	end
+	downloadUrlToFile(update_url, update_path, function(id, status)
+        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+            updateIni = inicfg.load(nil, update_path)
+            if tonumber(updateIni.update.vers) > script_vers then
+                update_state = true
+            end
+            os.remove(update_path)
+        end
+    end)
     while true do
         wait(0)
         inicfg.save(cfg, 'OSHelper.ini')
@@ -391,10 +400,22 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
-				if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
-	        		save()
-					msg('Все настройки сохранены.')
-	        	end
+				if not update_state then
+					if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
+		        		save()
+						msg('Все настройки сохранены.')
+		        	end
+		        else
+		        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
+		        		downloadUrlToFile(script_url, script_path, function(id, status)
+			                if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+			                    sampAddChatMessage("Скрипт успешно обновлен!", -1)
+			                    thisScript():reload()
+			                end
+			            end)
+						msg('Скрипт обновлен до версии '..updateIni.update.vers_text)
+		        	end
+		        end
 			imgui.EndChild()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
@@ -565,7 +586,16 @@ function imgui.OnDrawFrame()
 end
 
 -- update
+update_state = false
 
+local script_vers = 1
+local script_vers_text = "1.00"
+
+local update_url = "https://raw.githubusercontent.com/deveeh/oshelper/master/update.ini" -- тут тоже свою ссылку
+local update_path = getWorkingDirectory() .. "/moonloader/update.ini" -- и тут свою ссылку
+
+local script_url = "https://github.com/deveeh/oshelper/blob/master/oshelper.lua?raw=true" -- тут свою ссылку
+local script_path = thisScript().path
 
 -- theme
 function themeSettings(theme)
@@ -731,5 +761,3 @@ function themeSettings(theme)
 	end
 end
 themeSettings()
-
--- RakNet
