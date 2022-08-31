@@ -421,7 +421,7 @@ function imgui.OnDrawFrame()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
 			if menu == 1 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Персонаж penis')
+        			imgui.CenterText(u8'Персонаж')
         		imgui.PopFont()
         		imgui.Separator()
         		if imgui.Checkbox(u8'Умный бронежилет', armor) then cfg.settings.armor = armor.v end
@@ -537,7 +537,7 @@ function imgui.OnDrawFrame()
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
     	imgui.Begin('OS Helper##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'PR Manager | Menu')
+        			imgui.CenterText(u8'PR Manager | Menu penis')
         	imgui.PopFont()
         	imgui.Separator()
         	if prmanager.v then
