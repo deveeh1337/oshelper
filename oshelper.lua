@@ -476,7 +476,7 @@ function imgui.OnDrawFrame()
 		        if updateversion ~= thisScript().version then
 		        	lua_thread.create(function()
 			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
-				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/oshelper.lua", '['..string.upper(thisScript().name)..']: ', "")
+				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
 				                    msg("Скрипт успешно обновлен до версии "..version.."!" , -1)
 				                    thisScript():reload()
 			        	end
