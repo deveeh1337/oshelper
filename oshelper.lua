@@ -1,8 +1,7 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.3 beta')
 script_author('deveeh')
-local version = '1.0 beta'
 
 -- libraries
 require 'lib.moonloader'
@@ -260,6 +259,7 @@ end
 function main()
     while not isSampAvailable() do wait(200) end
     _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
     imgui.Process = false
     window.v = false  --show window
@@ -467,19 +467,20 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
-				if updateversion == thisScript().version then
-					if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
+		        if updateversion ~= thisScript().version then
+		        	lua_thread.create(function()
+			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
+				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				                    msg("Скрипт успешно обновлен до версии "..updateversion.."!" , -1)
+				                    thisScript():reload()
+			        	end
+		        	end)
+		        else
+		        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 		        		save()
 						msg('Все настройки сохранены.')
 		        	end
 		        end
-		        lua_thread.create(function()
-			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
-				        		autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
-				            msg("Скрипт успешно обновлен до версии "..version.."!" , -1)
-				            thisScript():reload()
-			        	end
-		        	end)
 			imgui.EndChild()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
