@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.0 alpha')
 script_author('deveeh')
 
 -- libraries
@@ -639,20 +639,20 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
-				if updatestatus then
-		        	lua_thread.create(function()
-			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
-			        		imgui.ShowCursor = false
-				          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				lua_thread.create(function()
+					if updateversion ~= thisScript().version then
+				        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
+				        		imgui.ShowCursor = false
+					          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				        	end
+			    end
+			    if updateversion == thisScript().version then
+			        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
+			        		save()
+									msg('Все настройки сохранены.')
 			        	end
-		        	end)
-		    end
-		    if not updatestatus then
-		        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
-		        		save()
-								msg('Все настройки сохранены.')
-		        	end
-		    end
+			    end
+			  end)
 			imgui.EndChild()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
