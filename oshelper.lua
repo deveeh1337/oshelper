@@ -41,6 +41,7 @@ function autoupdate(json_url, prefix, url)
             f:close()
             os.remove(json)
             if updateversion ~= thisScript().version then
+            	updatestatus = true
               lua_thread.create(function(prefix)
                 local dlstatus = require('moonloader').download_status
                 local color = -1
@@ -52,6 +53,7 @@ function autoupdate(json_url, prefix, url)
                       print(string.format('Загружено %d из %d.', p13, p23))
                     elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
                       msg('Скрипт успешно обновился до версии '..updateversion..'.')
+                      updatestatus = false
                       goupdatestatus = true
                       lua_thread.create(function() wait(500) thisScript():reload() end)
                     end
@@ -637,16 +639,15 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
-				if updateversion ~= thisScript().version then
+				if updatestatus then
 		        	lua_thread.create(function()
 			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
 				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
 				               			imgui.ShowCursor = false
-				                    thisScript():reload()
 			        	end
 		        	end)
 		    end
-		    if updateversion == thisScript().version then
+		    if not updatestatus then
 		        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 		        		save()
 								msg('Все настройки сохранены.')
