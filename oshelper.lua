@@ -1,8 +1,8 @@
 -- script
 script_name('OS Helper')
-script_version('1.1 beta')
+script_version('1.0 beta')
 script_author('deveeh')
-local version = '1.1 beta'
+local version = '1.0 beta'
 
 -- libraries
 require 'lib.moonloader'
@@ -473,15 +473,13 @@ function imgui.OnDrawFrame()
 						msg('Все настройки сохранены.')
 		        	end
 		        end
-		        if updateversion ~= thisScript().version then
-		        	lua_thread.create(function()
+		        lua_thread.create(function()
 			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
-				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
-				                    msg("Скрипт успешно обновлен до версии "..version.."!" , -1)
-				                    thisScript():reload()
+				        		autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				            msg("Скрипт успешно обновлен до версии "..version.."!" , -1)
+				            thisScript():reload()
 			        	end
 		        	end)
-		        end
 			imgui.EndChild()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
