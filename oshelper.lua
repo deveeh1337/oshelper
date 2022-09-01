@@ -641,6 +641,7 @@ function imgui.OnDrawFrame()
 		        	lua_thread.create(function()
 			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
 				               	autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				               			imgui.ShowCursor() = false
 				                    thisScript():reload()
 			        	end
 		        	end)
