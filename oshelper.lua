@@ -641,17 +641,18 @@ function imgui.OnDrawFrame()
 				end
 				imgui.SetCursorPosY(265)
 				lua_thread.create(function()
-					if updatestatus then
-				        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
-				        		imgui.ShowCursor = false
-					          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
-				        	end
-			    end
 			    if not updatestatus then
 			        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 			        		save()
 									msg('Все настройки сохранены.')
 			        	end
+			    end
+			    if updatestatus then
+				        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
+				        		imgui.ShowCursor = false
+				        		imgui.Process = false
+					          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+				        	end
 			    end
 			  end)
 			imgui.EndChild()
