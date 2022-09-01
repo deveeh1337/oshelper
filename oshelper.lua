@@ -645,12 +645,13 @@ function imgui.OnDrawFrame()
 				                    thisScript():reload()
 			        	end
 		        	end)
-		        else
+		    end
+		    if updateversion == thisScript().version then
 		        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 		        		save()
-						msg('Все настройки сохранены.')
+								msg('Все настройки сохранены.')
 		        	end
-		        end
+		    end
 			imgui.EndChild()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
