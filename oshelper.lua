@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 alpha')
+script_version('1.0 beta')
 script_author('deveeh')
 
 -- libraries
@@ -641,7 +641,7 @@ function imgui.OnDrawFrame()
 				end
 				imgui.SetCursorPosY(265)
 				lua_thread.create(function()
-			    if not updatestatus then
+					if not updatestatus then
 			        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 			        		save()
 									msg('Все настройки сохранены.')
