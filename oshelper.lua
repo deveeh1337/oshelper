@@ -1,8 +1,7 @@
 -- script
 script_name('OS Helper')
-script_version('1.1 beta')
+script_version('1.0 beta')
 script_author('deveeh')
-local scriptversion = '1.1 beta'
 
 -- libraries
 require 'lib.moonloader'
@@ -15,10 +14,71 @@ local fa = require 'fAwesome5'
 local fa_glyph_ranges = imgui.ImGlyphRanges({ fa.min_range, fa.max_range })
 local inicfg = require 'inicfg'
 local sampev = require 'lib.samp.events'
+local ffi = require("ffi")
+local mem = require "memory"
+ffi.cdef[[
+	short GetKeyState(int nVirtKey);
+	bool GetKeyboardLayoutNameA(char* pwszKLID);
+	int GetLocaleInfoA(int Locale, int LCType, char* lpLCData, int cchData);
+]]
+local BuffSize = 32
+local KeyboardLayoutName = ffi.new("char[?]", BuffSize)
+local LocalInfo = ffi.new("char[?]", BuffSize)
 
-local enable_autoupdate = true -- false to disable auto-update + disable sending initial telemetry (server, moonloader version, script version, samp nickname, virtual volume serial number)
-local autoupdate_loaded = false
-local Update = nil
+function autoupdate(json_url, prefix, url)
+  local dlstatus = require('moonloader').download_status
+  local json = getWorkingDirectory() .. '\\'..thisScript().name..'-version.json'
+  if doesFileExist(json) then os.remove(json) end
+  downloadUrlToFile(json_url, json,
+    function(id, status, p1, p2)
+      if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+        if doesFileExist(json) then
+          local f = io.open(json, 'r')
+          if f then
+            local info = decodeJson(f:read('*a'))
+            updatelink = info.updateurl
+            updateversion = info.latest
+            f:close()
+            os.remove(json)
+            if updateversion ~= thisScript().version then
+              lua_thread.create(function(prefix)
+                local dlstatus = require('moonloader').download_status
+                local color = -1
+                sampAddChatMessage((prefix..'Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion), color)
+                wait(250)
+                downloadUrlToFile(updatelink, thisScript().path,
+                  function(id3, status1, p13, p23)
+                    if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
+                      print(string.format('Загружено %d из %d.', p13, p23))
+                    elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
+                      print('Загрузка обновления завершена.')
+                      sampAddChatMessage((prefix..'Обновление завершено!'), color)
+                      goupdatestatus = true
+                      lua_thread.create(function() wait(500) thisScript():reload() end)
+                    end
+                    if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
+                      if goupdatestatus == nil then
+                        sampAddChatMessage((prefix..'Обновление прошло неудачно. Запускаю устаревшую версию..'), color)
+                        update = false
+                      end
+                    end
+                  end
+                )
+                end, prefix
+              )
+            else
+              update = false
+              print('v'..thisScript().version..': Обновление не требуется.')
+            end
+          end
+        else
+          print('v'..thisScript().version..': Не могу проверить обновление. Смиритесь или проверьте самостоятельно на '..url)
+          update = false
+        end
+      end
+    end
+  )
+  while update ~= false do wait(100) end
 
 -- cfg
 local direct = 'moonloader\\config\\OSHelper.ini'
@@ -54,17 +114,24 @@ local cfg = inicfg.load({
 		fammsg = ' ',
 		admsg1 = ' ',
 		stringmsg = ' ',
+		almsg = ' ',
 		adbox = false,
 		adbox2 = false,
+		chatcleaner = false,
 		plusw = false,
+		chathelper = false,
+		calcbox = false,
 		delay = 30,
 		logincard = 123456,
+		carclear = false,
 	}
 }, "OSHelper")
 
 -- variables
 local window = imgui.ImBool(false)
 local prmwindow = imgui.ImBool(false)
+local cwindow = imgui.ImBool(false)
+local clearwindow = imgui.ImBool(false)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local active = imgui.ImInt(cfg.settings.active)
@@ -73,12 +140,14 @@ local weather = imgui.ImInt(cfg.settings.weather)
 local cheatcode = imgui.ImBuffer(''..cfg.settings.cheatcode, 256)
 local vrmsg1 = imgui.ImBuffer(''..cfg.settings.vrmsg1, 256)
 local vrmsg2 = imgui.ImBuffer(256)
+local carclear = imgui.ImBool(cfg.settings.carclear)
 local vr1 = imgui.ImBool(cfg.settings.vr1)
+local calcbox = imgui.ImBool(cfg.settings.calcbox)
 local vr2 = imgui.ImBool(cfg.settings.vr2)
 local fammsg = imgui.ImBuffer(''..cfg.settings.fammsg, 256)
 local prstring = imgui.ImBool(cfg.settings.prstring)
 local stringmsg = imgui.ImBuffer(''..cfg.settings.stringmsg, 256)
-local almsg = imgui.ImBuffer(256)
+local almsg = imgui.ImBuffer(''..cfg.settings.almsg,256)
 local adbox = imgui.ImBool(cfg.settings.adbox)
 local adbox2 = imgui.ImBool(cfg.settings.adbox2)
 local admsg1 = imgui.ImBuffer(''..cfg.settings.admsg1, 256)
@@ -94,6 +163,7 @@ local rem = imgui.ImBool(cfg.settings.rem)
 local fill = imgui.ImBool(cfg.settings.fill)
 local mask = imgui.ImBool(cfg.settings.mask)
 local fmenu = imgui.ImBool(cfg.settings.fmenu)
+local chatcleaner = imgui.ImBool(cfg.settings.chatcleaner)
 local finv = imgui.ImBool(cfg.settings.finv)
 local lock = imgui.ImBool(cfg.settings.lock)
 local autolock = imgui.ImBool(cfg.settings.autolock)
@@ -104,12 +174,19 @@ local delay = imgui.ImInt(cfg.settings.delay)
 local plusw = imgui.ImBool(cfg.settings.plusw)
 local prmanager = imgui.ImBool(cfg.settings.prmanager)
 local timeweather = imgui.ImBool(cfg.settings.timeweather)
+local chathelper = imgui.ImBool(cfg.settings.chathelper)
 local pronoroff = false
 local menu = 1
 
 bike = {[481] = true, [509] = true, [510] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
-
+chars = {
+	["й"] = "q", ["ц"] = "w", ["у"] = "e", ["к"] = "r", ["е"] = "t", ["н"] = "y", ["г"] = "u", ["ш"] = "i", ["щ"] = "o", ["з"] = "p", ["х"] = "[", ["ъ"] = "]", ["ф"] = "a",
+	["ы"] = "s", ["в"] = "d", ["а"] = "f", ["п"] = "g", ["р"] = "h", ["о"] = "j", ["л"] = "k", ["д"] = "l", ["ж"] = ";", ["э"] = "'", ["я"] = "z", ["ч"] = "x", ["с"] = "c", ["м"] = "v",
+	["и"] = "b", ["т"] = "n", ["ь"] = "m", ["б"] = ",", ["ю"] = ".", ["Й"] = "Q", ["Ц"] = "W", ["У"] = "E", ["К"] = "R", ["Е"] = "T", ["Н"] = "Y", ["Г"] = "U", ["Ш"] = "I",
+	["Щ"] = "O", ["З"] = "P", ["Х"] = "{", ["Ъ"] = "}", ["Ф"] = "A", ["Ы"] = "S", ["В"] = "D", ["А"] = "F", ["П"] = "G", ["Р"] = "H", ["О"] = "J", ["Л"] = "K", ["Д"] = "L",
+	["Ж"] = ":", ["Э"] = "\"", ["Я"] = "Z", ["Ч"] = "X", ["С"] = "C", ["М"] = "V", ["И"] = "B", ["Т"] = "N", ["Ь"] = "M", ["Б"] = "<", ["Ю"] = ">"
+}
 -- functions
 function msg(arg)
 	sampAddChatMessage(color..'[OS Helper] {FFFFFF}'..textcolor..arg..'', -1)
@@ -204,14 +281,22 @@ function imgui.InputTextWithHint(label, hint, buf, flags, callback, user_data)
     return handle
 end
 
+function number_separator(n) 
+	local left, num, right = string.match(n,'^([^%d]*%d)(%d*)(.-)$')
+	return left..(num:reverse():gsub('(%d%d%d)','%1 '):reverse())..right
+end
+
 -- main
 function main()
     while not isSampAvailable() do wait(200) end
     _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
-    autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ')
+    inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
+	lua_thread.create(inputChat)
+	lua_thread.create(showInputHelp)
     imgui.Process = false
     window.v = false  --show window
+    autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "http://vk.com/qrlk.mods")
     sampRegisterChatCommand('pr', function()
 		if prmanager.v then pronoroff = not pronoroff; msg(pronoroff and 'Реклама включена.' or 'Реклама выключена.') end
 		lua_thread.create(function()
@@ -261,6 +346,12 @@ function main()
 		sampRegisterChatCommand('prm', function() 
 			prmwindow.v = not prmwindow.v  
 		end)
+		sampRegisterChatCommand('ccm', function() 
+			clearwindow.v = not clearwindow.v  
+		end)
+		sampRegisterChatCommand('cc', function() 
+			clearchat() 
+		end)
     local ip, port = sampGetCurrentServerAddress()
 	if ip == '185.169.134.163' and port == 7777 then serverName = 'Rodina RP | Central District'
 	elseif ip == '185.169.134.60' and port == 7777 then serverName = 'Rodina RP | Southern District'
@@ -269,6 +360,37 @@ function main()
 	end
     while true do
         wait(0)
+        calctext = sampGetChatInputText()
+        if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
+            calcactive, number = pcall(load('return '..calctext))
+            result = 'Результат: '..number
+        end
+        if calctext:find('%d+%%%*%d+') then
+            number1, number2 = calctext:match('(%d+)%%%*(%d+)')
+            number = number1*number2/100
+            calcactive, number = pcall(load('return '..number))
+            result = textcolor..'Результат: '..color..number
+        end
+        if calctext:find('%d+%%%/%d+') then
+            number1, number2 = calctext:match('(%d+)%%%/(%d+)')
+            number = number2/number1*100
+            calcactive, number = pcall(load('return '..number))
+            result = 'Результат: '..number
+        end
+        if calctext:find('%d+/%d+%%') then
+            number1, number2 = calctext:match('(%d+)/(%d+)%%')
+            number = number1*100/number2
+            calcactive, number = pcall(load('return '..number))
+            result = 'Результат: '..number..'%'
+        end
+        if calctext == '' then
+            calcactive = false
+        end
+        if(isKeyDown(VK_T) and wasKeyPressed(VK_T))then
+			if(not sampIsChatInputActive() and not sampIsDialogActive())then
+				sampSetChatInputEnabled(true)
+			end
+		end
         if timeweather.v then
       		setTimeOfDay(time.v, 0)
       		forceWeatherNow(weather.v)
@@ -276,7 +398,7 @@ function main()
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     	if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
-        imgui.Process = window.v or prmwindow.v
+        imgui.Process = window.v or prmwindow.v or cwindow.v or clearwindow.v or calcactive
         -- hotkeys
         if not sampIsCursorActive() then
         	if mask.v and isKeyDown(0x12) and wasKeyPressed(0x32) then send('/mask') end
@@ -326,62 +448,76 @@ function main()
 end
 
 -- code
-function autoupdate(json_url, prefix, url)
-  local dlstatus = require('moonloader').download_status
-  local json = getWorkingDirectory() .. '\\'..thisScript().name..'-version.json'
-  if doesFileExist(json) then os.remove(json) end
-  downloadUrlToFile(json_url, json,
-    function(id, status, p1, p2)
-      if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-        if doesFileExist(json) then
-          local f = io.open(json, 'r')
-          if f then
-            local info = decodeJson(f:read('*a'))
-            updatelink = info.updateurl
-            updateversion = info.latest
-            f:close()
-            os.remove(json)
-            if updateversion ~= thisScript().version then
-              lua_thread.create(function(prefix)
-                local dlstatus = require('moonloader').download_status
-                local color = -1
-                msg(('Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion), color)
-                wait(250)
-                downloadUrlToFile(updatelink, thisScript().path,
-                  function(id3, status1, p13, p23)
-                    if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
-                      print(string.format('Загружено %d из %d.', p13, p23))
-                    elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
-                      print('Загрузка обновления завершена.')
-                      sampAddChatMessage((prefix..'Обновление завершено!'), color)
-                      goupdatestatus = true
-                      lua_thread.create(function() wait(500) thisScript():reload() end)
-                    end
-                    if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
-                      if goupdatestatus == nil then
-                        sampAddChatMessage((prefix..'Обновление прошло неудачно. Запускаю устаревшую версию..'), color)
-                        update = false
-                      end
-                    end
-                  end
-                )
-                end, prefix
-              )
-            else
-              update = false
-              print('v'..thisScript().version..': Обновление не требуется.')
-            end
-          end
-        else
-          print('v'..thisScript().version..': Не могу проверить обновление. Смиритесь или проверьте самостоятельно на '..url)
-          update = false
-        end
-      end
-    end
-  )
-  while update ~= false do wait(100) end
+function getStrByState(keyState)
+	if keyState == 0 then
+		return "OFF"
+	end
+	return "ON"
+end
+function translite(text)
+	for k, v in pairs(chars) do
+		text = string.gsub(text, k, v)
+	end
+	return text
 end
 
+function showInputHelp()
+	while true do
+		local chat = sampIsChatInputActive()
+		if chat and chathelper.v then
+			local in1 = sampGetInputInfoPtr()
+			local in1 = getStructElement(in1, 0x8, 4)
+			local in2 = getStructElement(in1, 0x8, 4)
+			local in3 = getStructElement(in1, 0xC, 4)
+			fib = in3 + 41
+			fib2 = in2 + 10
+			local _, pID = sampGetPlayerIdByCharHandle(playerPed)
+			local name = sampGetPlayerNickname(pID)
+			local score = sampGetPlayerScore(pID)
+			local color = sampGetPlayerColor(pID)
+			local capsState = ffi.C.GetKeyState(20)
+			local success = ffi.C.GetKeyboardLayoutNameA(KeyboardLayoutName)
+			local errorCode = ffi.C.GetLocaleInfoA(tonumber(ffi.string(KeyboardLayoutName), 16), 0x00000002, LocalInfo, BuffSize)
+			local localName = ffi.string(LocalInfo)
+			if cfg.settings.theme == 0 then
+				local stringtext = string.format("{c7c7c7}ID: {ff4747}%d, {c7c7c7}Caps: {ff4747}%s, {c7c7c7}Lang: {ff4747}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
+				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
+			end
+			if cfg.settings.theme == 1 then
+				local stringtext = string.format("{c7c7c7}ID: {00bd5c}%d, {c7c7c7}Caps: {00bd5c}%s, {c7c7c7}Lang: {00bd5c}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
+				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
+			end
+			if cfg.settings.theme == 2 then
+				local stringtext = string.format("{c7c7c7}ID: {e8a321}%d, {c7c7c7}Caps: {e8a321}%s, {c7c7c7}Lang: {e8a321}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
+				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
+			end
+		end
+		wait(0)
+	end
+end
+
+function inputChat()
+	while true do
+		if(sampIsChatInputActive())then
+			local getInput = sampGetChatInputText()
+			if(oldText ~= getInput and #getInput > 0)then
+				local firstChar = string.sub(getInput, 1, 1)
+				if(firstChar == "." or firstChar == "/")then
+					local cmd, text = string.match(getInput, "^([^ ]+)(.*)")
+					local nText = "/" .. translite(string.sub(cmd, 2)) .. text
+					local chatInfoPtr = sampGetInputInfoPtr()
+					local chatBoxInfo = getStructElement(chatInfoPtr, 0x8, 4)
+					local lastPos = mem.getint8(chatBoxInfo + 0x11E)
+					sampSetChatInputText(nText)
+					mem.setint8(chatBoxInfo + 0x11E, lastPos)
+					mem.setint8(chatBoxInfo + 0x119, lastPos)
+					oldText = nText
+				end
+			end
+		end
+		wait(0)
+	end
+end
 function sampev.onSendEnterVehicle(id, pass)
 	if autolock.v then
 	    lua_thread.create(function()
@@ -394,6 +530,47 @@ function sampev.onSendEnterVehicle(id, pass)
 	    end
 	    end)
 	end
+end
+
+function sampev.onServerMessage(color, text)
+	--[[local carlist = "Состояние вашего авто крайне плохое! Машина может сломаться!"
+	if chatcleaner.v then 
+		if carclear.v then if text:find("Состояние вашего авто крайне плохое! Машина может сломаться!") and not text:find('говорит') then return false end end 
+	end]]--
+end
+
+function clearchat()
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
+	sampAddChatMessage('', -1)
 end
 
 function sampev.onSendExitVehicle(id)
@@ -430,10 +607,14 @@ function piar()
 					send('/fam '..u8:decode(fammsg.v))
 			end
 			wait(1000)
+			if pronoroff and al.v then
+					send('/al '..u8:decode(almsg.v))
+			end
+			wait(1000)
 			if pronoroff and adbox.v then
 				send('/ad 1 '..u8:decode(admsg1.v))
 			end
-			wait(3000)
+			wait(2000)
 			if pronoroff and prstring.v then
 				send(u8:decode(stringmsg.v))
 			end
@@ -452,12 +633,12 @@ function imgui.OnDrawFrame()
 	if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 	elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
 	elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-	else cfg.settings.theme = 4 themeSettings(1) color = '{ff4747}'
+	else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
 	end
     if window.v then
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
-        imgui.Begin('OS Helper | '..scriptversion, window, imgui.WindowFlags.NoResize)
+        imgui.Begin('OS Helper', window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
 				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
 				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
@@ -494,10 +675,10 @@ function imgui.OnDrawFrame()
         			imgui.CenterText(u8'Персонаж')
         		imgui.PopFont()
         		imgui.Separator()
-        		if imgui.Checkbox(u8'Умный бронежилет', armor) then cfg.settings.armor = armor.v end
-				imgui.TextQuestion(u8'Описание:\nОбновляет бронежилет, если у вас меньше 90 хп\nИспользовать бронежилет: ALT + 1')
+        		if imgui.Checkbox(u8'Бронежилет', armor) then cfg.settings.armor = armor.v end
+				imgui.TextQuestion(u8'Использовать бронежилет: ALT + 1')
 				if imgui.Checkbox(u8'Маска', mask) then cfg.settings.mask = mask.v end
-				imgui.TextQuestion(u8'Использовать нарко: ALT + 2')
+				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
 				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
 				imgui.TextQuestion(u8'Использовать нарко: ALT + 3')
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
@@ -537,8 +718,14 @@ function imgui.OnDrawFrame()
         			imgui.CenterText(u8'Работа с чатом')
         		imgui.PopFont()
 				imgui.Separator()
+				if imgui.Checkbox(u8'Chat Helper', chathelper) then cfg.settings.chathelper = chathelper.v end
+				imgui.TextQuestion(u8'Подсказки в чате')
+				if imgui.Checkbox(u8'Chat Calculator', calcbox) then cfg.settings.calcbox = calcbox.v end
+				imgui.TextQuestion(u8'Активация: 1+1 (в чат)')
 				if imgui.Checkbox(u8'PR Manager', prmanager) then cfg.settings.prmanager = prmanager.v end
 				imgui.TextQuestion(u8'Меню: /prm')
+				if imgui.Checkbox(u8'Chat Cleaner', chatcleaner) then cfg.settings.chatcleaner = chatcleaner.v end
+				imgui.TextQuestion(u8'Меню: /ccm')
 				if imgui.Checkbox(u8'Сокращенные команды', cmds) then cfg.settings.cmds = cmds.v save() end
 				if imgui.IsItemHovered() then
                     imgui.BeginTooltip()
@@ -614,25 +801,22 @@ function imgui.OnDrawFrame()
 					if imgui.InputInt(u8'##time', time) then
 						if time.v > 24 then
 							time.v = 24
-							cfg.settings.time = time.v 
 							patch_samp_time_set(true)
 						elseif time.v < 0 then
 							time.v = 0
-							cfg.settings.time = time.v 
 							patch_samp_time_set(true)
 						end
+						cfg.settings.time = time.v
 					end
 					imgui.Text(u8'Погода: ')
 					imgui.SameLine()
 					if imgui.InputInt(u8'##weather', weather) then
 						if weather.v < 0 then
-							weather.v = 0 
-							cfg.settings.weather = weather.v 
+							weather.v = 0  
 						elseif weather.v > 45 then
 							weather.v = 45 
-							cfg.settings.weather = weather.v
 						end
-
+						cfg.settings.weather = weather.v 
 					end
 				end
 			end
@@ -642,7 +826,7 @@ function imgui.OnDrawFrame()
     if prmwindow.v then
     	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
-    	imgui.Begin('OS Helper | '..scriptversion..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
+    	imgui.Begin('OS Helper##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
         			imgui.CenterText(u8'PR Manager | Menu')
         			imgui.CenterText(u8'Активация /pr')
@@ -655,11 +839,17 @@ function imgui.OnDrawFrame()
 					imgui.SameLine()
 					if imgui.InputTextWithHint(u8"##vr1", u8"Работает БК Лыткарино №56!", vrmsg1) then cfg.settings.vrmsg1 = vrmsg1.v end
 					end
-				if imgui.Checkbox(u8'Реклама в FAMILY CHAT (/fam, /al)', fam) then cfg.settings.fam = fam.v end
+				if imgui.Checkbox(u8'Реклама в FAMILY CHAT (/fam)', fam) then cfg.settings.fam = fam.v end
 				if fam.v then
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
 					if imgui.InputTextWithHint(u8"##fammsg", u8"Работает Ломбард №240!", fammsg) then cfg.settings.fammsg = fammsg.v end
+					end
+				if imgui.Checkbox(u8'Реклама в ALLIANCE CHAT (/al)', al) then cfg.settings.al = al.v end
+				if al.v then
+					imgui.Text(u8'Сообщение: ')
+					imgui.SameLine()
+					if imgui.InputTextWithHint(u8"##almsg", u8"Работает БК Лыткарино №56!", almsg) then cfg.settings.almsg = almsg.v end
 					end
 				if imgui.Checkbox(u8'Реклама в AD (/ad 1)', adbox) then cfg.settings.adbox = adbox.v end
 				if adbox.v then
@@ -691,6 +881,40 @@ function imgui.OnDrawFrame()
 
     	imgui.End()
    	end
+   	if clearwindow.v then
+    	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
+    	imgui.Begin('OS Helper##clearwindow', clearwindow, imgui.WindowFlags.NoResize)
+    		imgui.PushFont(fontsize)
+        			imgui.CenterText(u8'Chat Cleaner | Menu')
+        			imgui.CenterText(u8'Очистить чат /cc')
+        	imgui.PopFont()
+        	imgui.Separator()
+        	if chatcleaner.v then
+        		if imgui.Checkbox(u8'Машины', carclear) then cfg.settings.carclear = carclear.v end
+				imgui.TextQuestion(u8'Черный список:\nСостояние вашего авто крайне плохое;')
+		    else
+		    	imgui.CenterText(u8'Включите в главном меню функцию Chat Cleaner.')
+		    end
+		    imgui.SetCursorPos(imgui.ImVec2(5, 375))
+		    if imgui.Button(u8'Сохранить', imgui.ImVec2(290, 20)) then
+		        save()
+		        msg('Все настройки сохранены.')
+		    end
+
+    	imgui.End()
+   	end
+   	local input = sampGetInputInfoPtr()
+    local input = getStructElement(input, 0x8, 4)
+    local windowPosX = getStructElement(input, 0x8, 4)
+    local windowPosY = getStructElement(input, 0xC, 4)
+    if sampIsChatInputActive() and calcactive then
+	    imgui.SetNextWindowPos(imgui.ImVec2(windowPosX, windowPosY + 30 + 30), imgui.Cond.FirstUseEver)
+	    imgui.SetNextWindowSize(imgui.ImVec2(result:len()*10, 30))
+        imgui.Begin('Solve', cwindow, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove)
+        imgui.CenterText(u8(number_separator(result)))
+        imgui.End()
+    end
 end
 
 -- theme
