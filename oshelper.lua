@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 alpha')
+script_version('1.0 beta')
 script_author('deveeh')
 
 -- libraries
@@ -41,8 +41,8 @@ function autoupdate(json_url, prefix, url)
             f:close()
             os.remove(json)
             if updateversion ~= thisScript().version then
-            	updatestatus = true
               lua_thread.create(function(prefix)
+              	updatestatus = true
                 local dlstatus = require('moonloader').download_status
                 local color = -1
                 msg('Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion)
@@ -640,13 +640,13 @@ function imgui.OnDrawFrame()
 				end
 				imgui.SetCursorPosY(265)
 				lua_thread.create(function()
-					if updateversion ~= thisScript().version then
+					if updatestatus then
 				        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
 				        		imgui.ShowCursor = false
 					          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
 				        	end
 			    end
-			    if updateversion == thisScript().version then
+			    if not updatestatus then
 			        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 			        		save()
 									msg('Все настройки сохранены.')
