@@ -639,7 +639,7 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
-				if not updatestatus then
+				if updatestatus then
 		        	lua_thread.create(function()
 			        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
 			        		imgui.ShowCursor = false
@@ -647,7 +647,7 @@ function imgui.OnDrawFrame()
 			        	end
 		        	end)
 		    end
-		    if updatestatus then
+		    if not updatestatus then
 		        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
 		        		save()
 								msg('Все настройки сохранены.')
