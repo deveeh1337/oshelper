@@ -36,31 +36,30 @@ function autoupdate(json_url, prefix, url)
         if doesFileExist(json) then
           local f = io.open(json, 'r')
           if f then
-            local info = decodeJson(f:read('*a'))
+            info = decodeJson(f:read('*a'))
             updatelink = info.updateurl
             updateversion = info.latest
             f:close()
             os.remove(json)
             if updateversion ~= thisScript().version then
               lua_thread.create(function(prefix)
-              	updatestatus = true
                 local dlstatus = require('moonloader').download_status
                 local color = -1
                 msg('Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion)
-                wait(250)
+                wait(0)
                 downloadUrlToFile(updatelink, thisScript().path,
                   function(id3, status1, p13, p23)
                     if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
                       print(string.format('Загружено %d из %d.', p13, p23))
                     elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
                       msg('Скрипт успешно обновился до версии '..updateversion..'.')
-                      updatestatus = false
                       goupdatestatus = true
                       lua_thread.create(function() wait(500) thisScript():reload() end)
                     end
                     if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
                       if goupdatestatus == nil then
-                        msg('Не получается обновиться, запускаю старую версию ('..thisScript().name..')')
+                        msg('Не получается обновиться, запускаю старую версию ('..thisScript().version..')')
+                        imgui.ShowCursor = true
                         update = false
                       end
                     end
@@ -70,7 +69,8 @@ function autoupdate(json_url, prefix, url)
               )
             else
               update = false
-              print('v'..thisScript().version..': Обновление не требуется.')
+              msg('Обновление не требуется.')
+              imgui.ShowCursor = true
             end
           end
         else
@@ -357,7 +357,7 @@ function main()
 	end
     while true do
         wait(0)
-        if updateversion ~= version then updatestatus = true end
+        if updateversion ~= thisScript().version then updates = true end
         calctext = sampGetChatInputText()
         if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
             calcactive, number = pcall(load('return '..calctext))
@@ -757,7 +757,7 @@ function imgui.OnDrawFrame()
 					if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 					elseif cfg.settings.theme == 1 then themeSettings(3) color = '{00b052}'
 					elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-					else cfg.settings.theme = 3 themeSettings(1) color = '{ff4747}' 
+					else cfg.settings.theme = 3 themeSettings(1) color = '{ff4747}'
 					end
 				end
 				imgui.SetCursorPosX(89)
