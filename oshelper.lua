@@ -1,8 +1,7 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.0 alpha')
 script_author('deveeh')
-version = '1.0 beta'
 
 -- libraries
 require 'lib.moonloader'
@@ -629,7 +628,7 @@ function imgui.OnDrawFrame()
     if window.v then
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
-        imgui.Begin('OS Helper | '..thisScript().version, window, imgui.WindowFlags.NoResize)
+        imgui.Begin('OS Helper | '..updateversion, window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
 				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
 				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
@@ -812,7 +811,7 @@ function imgui.OnDrawFrame()
     if prmwindow.v then
     	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
-    	imgui.Begin('OS Helper | '..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
+    	imgui.Begin('OS Helper | '....updateversion..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
         			imgui.CenterText(u8'PR Manager | Menu')
         			imgui.CenterText(u8'Активация /pr')
