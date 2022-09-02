@@ -1,7 +1,8 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.0 alpha')
 script_author('deveeh')
+version = '1.0 beta'
 
 -- libraries
 require 'lib.moonloader'
@@ -45,21 +46,21 @@ function autoupdate(json_url, prefix, url)
               	updatestatus = true
                 local dlstatus = require('moonloader').download_status
                 local color = -1
-                msg('Обнаружено обновление. Пытаюсь обновиться c '..thisScript().version..' на '..updateversion)
+                msg('РћР±РЅР°СЂСѓР¶РµРЅРѕ РѕР±РЅРѕРІР»РµРЅРёРµ. РџС‹С‚Р°СЋСЃСЊ РѕР±РЅРѕРІРёС‚СЊСЃСЏ c '..thisScript().version..' РЅР° '..updateversion)
                 wait(250)
                 downloadUrlToFile(updatelink, thisScript().path,
                   function(id3, status1, p13, p23)
                     if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
-                      print(string.format('Загружено %d из %d.', p13, p23))
+                      print(string.format('Р—Р°РіСЂСѓР¶РµРЅРѕ %d РёР· %d.', p13, p23))
                     elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
-                      msg('Скрипт успешно обновился до версии '..updateversion..'.')
+                      msg('РЎРєСЂРёРїС‚ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІРёР»СЃСЏ РґРѕ РІРµСЂСЃРёРё '..updateversion..'.')
                       updatestatus = false
                       goupdatestatus = true
                       lua_thread.create(function() wait(500) thisScript():reload() end)
                     end
                     if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
                       if goupdatestatus == nil then
-                        msg('Не получается обновиться, запускаю старую версию ('..thisScript().name..')')
+                        msg('РќРµ РїРѕР»СѓС‡Р°РµС‚СЃСЏ РѕР±РЅРѕРІРёС‚СЊСЃСЏ, Р·Р°РїСѓСЃРєР°СЋ СЃС‚Р°СЂСѓСЋ РІРµСЂСЃРёСЋ ('..thisScript().name..')')
                         update = false
                       end
                     end
@@ -69,11 +70,11 @@ function autoupdate(json_url, prefix, url)
               )
             else
               update = false
-              print('v'..thisScript().version..': Обновление не требуется.')
+              print('v'..thisScript().version..': РћР±РЅРѕРІР»РµРЅРёРµ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ.')
             end
           end
         else
-          print('v'..thisScript().version..': Не могу проверить обновление. Смиритесь или проверьте самостоятельно на '..url)
+          print('v'..thisScript().version..': РќРµ РјРѕРіСѓ РїСЂРѕРІРµСЂРёС‚СЊ РѕР±РЅРѕРІР»РµРЅРёРµ. РЎРјРёСЂРёС‚РµСЃСЊ РёР»Рё РїСЂРѕРІРµСЂСЊС‚Рµ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ РЅР° '..url)
           update = false
         end
       end
@@ -178,11 +179,11 @@ local menu = 1
 bike = {[481] = true, [509] = true, [510] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
 chars = {
-	["й"] = "q", ["ц"] = "w", ["у"] = "e", ["к"] = "r", ["е"] = "t", ["н"] = "y", ["г"] = "u", ["ш"] = "i", ["щ"] = "o", ["з"] = "p", ["х"] = "[", ["ъ"] = "]", ["ф"] = "a",
-	["ы"] = "s", ["в"] = "d", ["а"] = "f", ["п"] = "g", ["р"] = "h", ["о"] = "j", ["л"] = "k", ["д"] = "l", ["ж"] = ";", ["э"] = "'", ["я"] = "z", ["ч"] = "x", ["с"] = "c", ["м"] = "v",
-	["и"] = "b", ["т"] = "n", ["ь"] = "m", ["б"] = ",", ["ю"] = ".", ["Й"] = "Q", ["Ц"] = "W", ["У"] = "E", ["К"] = "R", ["Е"] = "T", ["Н"] = "Y", ["Г"] = "U", ["Ш"] = "I",
-	["Щ"] = "O", ["З"] = "P", ["Х"] = "{", ["Ъ"] = "}", ["Ф"] = "A", ["Ы"] = "S", ["В"] = "D", ["А"] = "F", ["П"] = "G", ["Р"] = "H", ["О"] = "J", ["Л"] = "K", ["Д"] = "L",
-	["Ж"] = ":", ["Э"] = "\"", ["Я"] = "Z", ["Ч"] = "X", ["С"] = "C", ["М"] = "V", ["И"] = "B", ["Т"] = "N", ["Ь"] = "M", ["Б"] = "<", ["Ю"] = ">"
+	["Р№"] = "q", ["С†"] = "w", ["Сѓ"] = "e", ["Рє"] = "r", ["Рµ"] = "t", ["РЅ"] = "y", ["Рі"] = "u", ["С€"] = "i", ["С‰"] = "o", ["Р·"] = "p", ["С…"] = "[", ["СЉ"] = "]", ["С„"] = "a",
+	["С‹"] = "s", ["РІ"] = "d", ["Р°"] = "f", ["Рї"] = "g", ["СЂ"] = "h", ["Рѕ"] = "j", ["Р»"] = "k", ["Рґ"] = "l", ["Р¶"] = ";", ["СЌ"] = "'", ["СЏ"] = "z", ["С‡"] = "x", ["СЃ"] = "c", ["Рј"] = "v",
+	["Рё"] = "b", ["С‚"] = "n", ["СЊ"] = "m", ["Р±"] = ",", ["СЋ"] = ".", ["Р™"] = "Q", ["Р¦"] = "W", ["РЈ"] = "E", ["Рљ"] = "R", ["Р•"] = "T", ["Рќ"] = "Y", ["Р“"] = "U", ["РЁ"] = "I",
+	["Р©"] = "O", ["Р—"] = "P", ["РҐ"] = "{", ["РЄ"] = "}", ["Р¤"] = "A", ["Р«"] = "S", ["Р’"] = "D", ["Рђ"] = "F", ["Рџ"] = "G", ["Р "] = "H", ["Рћ"] = "J", ["Р›"] = "K", ["Р”"] = "L",
+	["Р–"] = ":", ["Р­"] = "\"", ["РЇ"] = "Z", ["Р§"] = "X", ["РЎ"] = "C", ["Рњ"] = "V", ["Р"] = "B", ["Рў"] = "N", ["Р¬"] = "M", ["Р‘"] = "<", ["Р®"] = ">"
 }
 -- functions
 function msg(arg)
@@ -204,7 +205,7 @@ function imgui.BeforeDrawFrame()
 		fa_font = imgui.GetIO().Fonts:AddFontFromFileTTF('moonloader/resource/fonts/fontawesome-webfont.ttf', 14.0, font_config, fa_glyph_ranges)
 	end
 	if fontsize == nil then
-        fontsize = imgui.GetIO().Fonts:AddFontFromFileTTF(getFolderPath(0x14) .. '\\trebucbd.ttf', 16.0, nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic()) -- вместо 30 любой нужный размер
+        fontsize = imgui.GetIO().Fonts:AddFontFromFileTTF(getFolderPath(0x14) .. '\\trebucbd.ttf', 16.0, nil, imgui.GetIO().Fonts:GetGlyphRangesCyrillic()) -- РІРјРµСЃС‚Рѕ 30 Р»СЋР±РѕР№ РЅСѓР¶РЅС‹Р№ СЂР°Р·РјРµСЂ
     end
 end
 
@@ -289,7 +290,6 @@ function main()
     _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
     inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
-    if updateversion ~= thisScript().version then updatestatus = true end
 	lua_thread.create(inputChat)
 	lua_thread.create(showInputHelp)
     imgui.Process = false
@@ -298,7 +298,7 @@ function main()
         pcall(Update.check, Update.json_url, Update.prefix, Update.url)
     end
     sampRegisterChatCommand('pr', function()
-		if prmanager.v then pronoroff = not pronoroff; msg(pronoroff and 'Реклама включена.' or 'Реклама выключена.') end
+		if prmanager.v then pronoroff = not pronoroff; msg(pronoroff and 'Р РµРєР»Р°РјР° РІРєР»СЋС‡РµРЅР°.' or 'Р РµРєР»Р°РјР° РІС‹РєР»СЋС‡РµРЅР°.') end
 		lua_thread.create(function()
 			if pronoroff and prmanager.v then piar() local delay = cfg.settings.delay * 1000 wait(delay) return true end 
 		end)
@@ -332,9 +332,9 @@ function main()
 			if cmds.v then 
 			    if arg:find('(%d+) (%d+)') then
 			        arg1, arg2 = arg:match('(.+) (.+)')
-			        sampSendChat('/showbizinfo '..arg1..' '..arg2) -- 2+ аргумента
+			        sampSendChat('/showbizinfo '..arg1..' '..arg2) -- 2+ Р°СЂРіСѓРјРµРЅС‚Р°
 			    else
-			        msg('/fin [id игрока] [id бизнеса]', -1)
+			        msg('/fin [id РёРіСЂРѕРєР°] [id Р±РёР·РЅРµСЃР°]', -1)
 			    end
 			end
 		end)
@@ -357,28 +357,29 @@ function main()
 	end
     while true do
         wait(0)
+        if updateversion ~= version then updatestatus = true end
         calctext = sampGetChatInputText()
         if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
             calcactive, number = pcall(load('return '..calctext))
-            result = 'Результат: '..number
+            result = 'Р РµР·СѓР»СЊС‚Р°С‚: '..number
         end
         if calctext:find('%d+%%%*%d+') then
             number1, number2 = calctext:match('(%d+)%%%*(%d+)')
             number = number1*number2/100
             calcactive, number = pcall(load('return '..number))
-            result = textcolor..'Результат: '..color..number
+            result = textcolor..'Р РµР·СѓР»СЊС‚Р°С‚: '..color..number
         end
         if calctext:find('%d+%%%/%d+') then
             number1, number2 = calctext:match('(%d+)%%%/(%d+)')
             number = number2/number1*100
             calcactive, number = pcall(load('return '..number))
-            result = 'Результат: '..number
+            result = 'Р РµР·СѓР»СЊС‚Р°С‚: '..number
         end
         if calctext:find('%d+/%d+%%') then
             number1, number2 = calctext:match('(%d+)/(%d+)%%')
             number = number1*100/number2
             calcactive, number = pcall(load('return '..number))
-            result = 'Результат: '..number..'%'
+            result = 'Р РµР·СѓР»СЊС‚Р°С‚: '..number..'%'
         end
         if calctext == '' then
             calcactive = false
@@ -410,7 +411,7 @@ function main()
 	     	if armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
 	     		if armourlvl > 89 then 
-		     		msg('У вас '..armourlvl..' процентов брони.')
+		     		msg('РЈ РІР°СЃ '..armourlvl..' РїСЂРѕС†РµРЅС‚РѕРІ Р±СЂРѕРЅРё.')
 		     	elseif armourlvl > 0 then
 		     		lua_thread.create(function() 
 		     			send('/armour')
@@ -630,28 +631,27 @@ function imgui.OnDrawFrame()
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
         imgui.Begin('OS Helper | '..thisScript().version, window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
-				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
-				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
-				elseif imgui.Selectable(fa.ICON_FA_USERS..u8' Семья', menu == 3) then menu = 3
-				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' Окружение', menu == 8) then menu = 8
-				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Работа с чатом', menu == 4) then menu = 4
-				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Работа с диалогами', menu == 5) then menu = 5
-				elseif imgui.Selectable(fa.ICON_FA_COG..u8' Настройки', menu == 6) then menu = 6
-				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
+				if imgui.Selectable(fa.ICON_FA_USER..u8' РџРµСЂСЃРѕРЅР°Р¶', menu == 1) then menu = 1
+				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' РўСЂР°РЅСЃРїРѕСЂС‚', menu == 2) then menu = 2
+				elseif imgui.Selectable(fa.ICON_FA_USERS..u8' РЎРµРјСЊСЏ', menu == 3) then menu = 3
+				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' РћРєСЂСѓР¶РµРЅРёРµ', menu == 8) then menu = 8
+				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Р Р°Р±РѕС‚Р° СЃ С‡Р°С‚РѕРј', menu == 4) then menu = 4
+				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Р Р°Р±РѕС‚Р° СЃ РґРёР°Р»РѕРіР°РјРё', menu == 5) then menu = 5
+				elseif imgui.Selectable(fa.ICON_FA_COG..u8' РќР°СЃС‚СЂРѕР№РєРё', menu == 6) then menu = 6
+				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' РРЅС„РѕСЂРјР°С†РёСЏ', menu == 7) then menu = 7
 				end
 				imgui.SetCursorPosY(265)
 				lua_thread.create(function()
-					if not updatestatus then
-			        	if imgui.Button(u8'Сохранить', imgui.ImVec2(135, 20)) then
+					if updateversion == thisScript().version then
+			        	if imgui.Button(u8'РЎРѕС…СЂР°РЅРёС‚СЊ', imgui.ImVec2(135, 20)) then
 			        		save()
-									msg('Все настройки сохранены.')
+									msg('Р’СЃРµ РЅР°СЃС‚СЂРѕР№РєРё СЃРѕС…СЂР°РЅРµРЅС‹.')
 			        	end
-			    end
-			    if updatestatus then
-				        	if imgui.Button(u8'Обновить', imgui.ImVec2(135, 20)) then
+			    elseif updateversion ~= thisScript().version then
+				        	if imgui.Button(u8'РћР±РЅРѕРІРёС‚СЊ', imgui.ImVec2(135, 20)) then
 				        		imgui.ShowCursor = false
 				        		imgui.Process = false
-					          autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
+					          --autoupdate("https://raw.githubusercontent.com/deveeh/oshelper/master/update.json", '['..string.upper(thisScript().name)..']: ', "")
 				        	end
 			    end
 			  end)
@@ -660,59 +660,59 @@ function imgui.OnDrawFrame()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
 			if menu == 1 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Персонаж')
+        			imgui.CenterText(u8'РџРµСЂСЃРѕРЅР°Р¶')
         		imgui.PopFont()
         		imgui.Separator()
-        		if imgui.Checkbox(u8'Бронежилет', armor) then cfg.settings.armor = armor.v end
-				imgui.TextQuestion(u8'Использовать бронежилет: ALT + 1')
-				if imgui.Checkbox(u8'Маска', mask) then cfg.settings.mask = mask.v end
-				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
-				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
-				imgui.TextQuestion(u8'Использовать нарко: ALT + 3')
-				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
-				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
+        		if imgui.Checkbox(u8'Р‘СЂРѕРЅРµР¶РёР»РµС‚', armor) then cfg.settings.armor = armor.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р±СЂРѕРЅРµР¶РёР»РµС‚: ALT + 1')
+				if imgui.Checkbox(u8'РњР°СЃРєР°', mask) then cfg.settings.mask = mask.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РјР°СЃРєСѓ: ALT + 2')
+				if imgui.Checkbox(u8'РќР°СЂРєРѕС‚РёРєРё (3 С€С‚)', drugs) then cfg.settings.drugs = drugs.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РЅР°СЂРєРѕ: ALT + 3')
+				if imgui.Checkbox(u8'РђРїС‚РµС‡РєР°', med) then cfg.settings.med = med.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р°РїС‚РµС‡РєСѓ: ALT + 4')
 			end
 			if menu == 2 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Транспорт')
+        			imgui.CenterText(u8'РўСЂР°РЅСЃРїРѕСЂС‚')
         		imgui.PopFont()
         		imgui.Separator()
 				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
-				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
-				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
-				imgui.TextQuestion(u8'Активация: L')
-				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
-				imgui.TextQuestion(u8'Использовать ремкомплект: R')
-				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
-				imgui.TextQuestion(u8'Использовать канистру: ALT + R')
-				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
-				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
+				imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: СЃРµСЃС‚СЊ РІ РјР°С€РёРЅСѓ\nРђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ Р·Р°РєСЂС‹С‚РёРµ РґРІРµСЂРµР№ + РІРєР»СЋС‡РµРЅРёРµ РґРІРёРіР°С‚РµР»СЏ')
+				if imgui.Checkbox(u8'РћС‚РєСЂС‹С‚СЊ/Р—Р°РєСЂС‹С‚СЊ РґРІРµСЂРё', lock) then cfg.settings.lock = lock.v end
+				imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: L')
+				if imgui.Checkbox(u8'Р РµРјРєРѕРјРїР»РµРєС‚', rem) then cfg.settings.rem = fill.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЂРµРјРєРѕРјРїР»РµРєС‚: R')
+				if imgui.Checkbox(u8'РљР°РЅРёСЃС‚СЂР°', fill) then cfg.settings.fill = fill.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РєР°РЅРёСЃС‚СЂСѓ: ALT + R')
+				if imgui.Checkbox(u8'РЎРїР°РІРЅ С‚СЂР°РЅСЃРїРѕСЂС‚Р°', spawn) then cfg.settings.spawn = spawn.v end
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ: РљРѕР»РµСЃРёРєРѕ РњС‹С€Рё (РЅР°Р¶Р°С‚РёРµ)')
 				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
-				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
+				imgui.TextQuestion(u8'РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ: W (Р·Р°Р¶Р°С‚РёРµ)\nРљР»РёРєРµСЂ РґР»СЏ РІРµР»РѕСЃРёРїРµРґРѕРІ Рё РјРѕС‚РѕС†РёРєР»РѕРІ')
 
 			end
 			if menu == 3 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Семья')
+        			imgui.CenterText(u8'РЎРµРјСЊСЏ')
         		imgui.PopFont()
 				imgui.Separator()
-				if imgui.Checkbox(u8'Меню семьи', fmenu) then cfg.settings.fmenu = fmenu.v end
-				imgui.TextQuestion(u8'Активация: O')
-				if imgui.Checkbox(u8'Инвайт в семью', finv) then cfg.settings.finv = finv.v end
-				imgui.TextQuestion(u8'Активация: F + 1')
+				if imgui.Checkbox(u8'РњРµРЅСЋ СЃРµРјСЊРё', fmenu) then cfg.settings.fmenu = fmenu.v end
+				imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: O')
+				if imgui.Checkbox(u8'РРЅРІР°Р№С‚ РІ СЃРµРјСЊСЋ', finv) then cfg.settings.finv = finv.v end
+				imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: F + 1')
 			end
 			if menu == 4 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Работа с чатом')
+        			imgui.CenterText(u8'Р Р°Р±РѕС‚Р° СЃ С‡Р°С‚РѕРј')
         		imgui.PopFont()
 				imgui.Separator()
 				if imgui.Checkbox(u8'Chat Helper', chathelper) then cfg.settings.chathelper = chathelper.v end
-				imgui.TextQuestion(u8'Подсказки в чате')
+				imgui.TextQuestion(u8'РџРѕРґСЃРєР°Р·РєРё РІ С‡Р°С‚Рµ')
 				if imgui.Checkbox(u8'Chat Calculator', calcbox) then cfg.settings.calcbox = calcbox.v end
-				imgui.TextQuestion(u8'Активация: 1+1 (в чат)')
+				imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: 1+1 (РІ С‡Р°С‚)')
 				if imgui.Checkbox(u8'PR Manager', prmanager) then cfg.settings.prmanager = prmanager.v end
-				imgui.TextQuestion(u8'Меню: /prm')
-				if imgui.Checkbox(u8'Сокращенные команды', cmds) then cfg.settings.cmds = cmds.v save() end
+				imgui.TextQuestion(u8'РњРµРЅСЋ: /prm')
+				if imgui.Checkbox(u8'РЎРѕРєСЂР°С‰РµРЅРЅС‹Рµ РєРѕРјР°РЅРґС‹', cmds) then cfg.settings.cmds = cmds.v save() end
 				if imgui.IsItemHovered() then
                     imgui.BeginTooltip()
                         imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo')
@@ -721,39 +721,39 @@ function imgui.OnDrawFrame()
 			end
 			if menu == 5 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Работа с диалогами')
+        			imgui.CenterText(u8'Р Р°Р±РѕС‚Р° СЃ РґРёР°Р»РѕРіР°РјРё')
         		imgui.PopFont()
-        			imgui.CenterText(u8'Не работает с новыми диалогами!')
+        			imgui.CenterText(u8'РќРµ СЂР°Р±РѕС‚Р°РµС‚ СЃ РЅРѕРІС‹РјРё РґРёР°Р»РѕРіР°РјРё!')
 				imgui.Separator()
-				if imgui.Checkbox(u8'Автологин в банке', cardlogin) then cfg.settings.cardlogin = cardlogin.v end
+				if imgui.Checkbox(u8'РђРІС‚РѕР»РѕРіРёРЅ РІ Р±Р°РЅРєРµ', cardlogin) then cfg.settings.cardlogin = cardlogin.v end
 				if cardlogin.v then 
-				imgui.Text(u8'Пин-код:')
+				imgui.Text(u8'РџРёРЅ-РєРѕРґ:')
 				imgui.SameLine()
 				imgui.PushItemWidth(54.5) 
-				if imgui.InputInt(u8'##логин банк', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
+				if imgui.InputInt(u8'##Р»РѕРіРёРЅ Р±Р°РЅРє', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
 				end
-				--imgui.TextQuestion(u8'Активация: ALT + F')
+				--imgui.TextQuestion(u8'РђРєС‚РёРІР°С†РёСЏ: ALT + F')
 			end
 			if menu == 6 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Настройки')
+        			imgui.CenterText(u8'РќР°СЃС‚СЂРѕР№РєРё')
         		imgui.PopFont()
 				imgui.Separator()
-				imgui.offset(u8'Активация меню: ') 
-			if imgui.Combo(u8'##Активация', active, {u8'Команда', u8'Чит-код'}, -1) then cfg.settings.active = active.v save() end
+				imgui.offset(u8'РђРєС‚РёРІР°С†РёСЏ РјРµРЅСЋ: ') 
+			if imgui.Combo(u8'##РђРєС‚РёРІР°С†РёСЏ', active, {u8'РљРѕРјР°РЅРґР°', u8'Р§РёС‚-РєРѕРґ'}, -1) then cfg.settings.active = active.v save() end
 			if imgui.IsItemHovered() then
 	            imgui.BeginTooltip()
-	                imgui.Text(u8'После изменения режима активации, сохраните и перезагрузите скрипт.')
+	                imgui.Text(u8'РџРѕСЃР»Рµ РёР·РјРµРЅРµРЅРёСЏ СЂРµР¶РёРјР° Р°РєС‚РёРІР°С†РёРё, СЃРѕС…СЂР°РЅРёС‚Рµ Рё РїРµСЂРµР·Р°РіСЂСѓР·РёС‚Рµ СЃРєСЂРёРїС‚.')
 	            imgui.EndTooltip()
             end
 				if active.v == 1 then
-					imgui.offset(u8' Чит-код: ')
-					--if imgui.InputText(u8'##Чит-код', cheatcode) then cfg.settings.cheatcode = cheatcode.v save() end
-					if imgui.InputTextWithHint(u8"##Чит Код", cfg.settings.cheatcode, cheatcode) then cfg.settings.cheatcode = cheatcode.v end
+					imgui.offset(u8' Р§РёС‚-РєРѕРґ: ')
+					--if imgui.InputText(u8'##Р§РёС‚-РєРѕРґ', cheatcode) then cfg.settings.cheatcode = cheatcode.v save() end
+					if imgui.InputTextWithHint(u8"##Р§РёС‚ РљРѕРґ", cfg.settings.cheatcode, cheatcode) then cfg.settings.cheatcode = cheatcode.v end
 				end
 				--if cheatcode.v == '' then cheatcode.v = 'oh' cfg.settings.cheatcode = 'oh' end
-				imgui.offset(u8'Цвет темы: ') 
-					if imgui.Combo(u8'##Тема', theme, {u8'Красный', u8'Зеленый', u8'Желтый'}, -1) then cfg.settings.theme = theme.v save()
+				imgui.offset(u8'Р¦РІРµС‚ С‚РµРјС‹: ') 
+					if imgui.Combo(u8'##РўРµРјР°', theme, {u8'РљСЂР°СЃРЅС‹Р№', u8'Р—РµР»РµРЅС‹Р№', u8'Р–РµР»С‚С‹Р№'}, -1) then cfg.settings.theme = theme.v save()
 					if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 					elseif cfg.settings.theme == 1 then themeSettings(3) color = '{00b052}'
 					elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
@@ -768,20 +768,20 @@ function imgui.OnDrawFrame()
 			end
 			if menu == 7 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Информация')
+        			imgui.CenterText(u8'РРЅС„РѕСЂРјР°С†РёСЏ')
         		imgui.PopFont()
 				imgui.Separator()
-				imgui.Text(fa.ICON_FA_ADDRESS_CARD..u8' Авторы:') imgui.SameLine() imgui.Link('https://vk.com/deveeh', 'deveeh') imgui.SameLine() imgui.Text(u8'и') imgui.SameLine() imgui.Link('https://t.me/atimohov', 'casparo')
+				imgui.Text(fa.ICON_FA_ADDRESS_CARD..u8' РђРІС‚РѕСЂС‹:') imgui.SameLine() imgui.Link('https://vk.com/deveeh', 'deveeh') imgui.SameLine() imgui.Text(u8'Рё') imgui.SameLine() imgui.Link('https://t.me/atimohov', 'casparo')
 			end
 			if menu == 8 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Окружение')
+        			imgui.CenterText(u8'РћРєСЂСѓР¶РµРЅРёРµ')
         		imgui.PopFont()
 				imgui.Separator()
-				if imgui.Checkbox(u8'Редактор времени и погоды', timeweather) then cfg.settings.timeweather = timeweather.v end
+				if imgui.Checkbox(u8'Р РµРґР°РєС‚РѕСЂ РІСЂРµРјРµРЅРё Рё РїРѕРіРѕРґС‹', timeweather) then cfg.settings.timeweather = timeweather.v end
 				if timeweather.v then
 					imgui.PushItemWidth(75)
-					imgui.Text(u8'Время: ')
+					imgui.Text(u8'Р’СЂРµРјСЏ: ')
 					imgui.SameLine()
 					imgui.SetCursorPosX(62)
 					if imgui.InputInt(u8'##time', time) then
@@ -794,7 +794,7 @@ function imgui.OnDrawFrame()
 						end
 						cfg.settings.time = time.v
 					end
-					imgui.Text(u8'Погода: ')
+					imgui.Text(u8'РџРѕРіРѕРґР°: ')
 					imgui.SameLine()
 					if imgui.InputInt(u8'##weather', weather) then
 						if weather.v < 0 then
@@ -815,54 +815,54 @@ function imgui.OnDrawFrame()
     	imgui.Begin('OS Helper | '..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
         			imgui.CenterText(u8'PR Manager | Menu')
-        			imgui.CenterText(u8'Активация /pr')
+        			imgui.CenterText(u8'РђРєС‚РёРІР°С†РёСЏ /pr')
         	imgui.PopFont()
         	imgui.Separator()
         	if prmanager.v then
-	        	if imgui.Checkbox(u8'Реклама в VIP CHAT (/vr)', vr1) then cfg.settings.vr1 = vr1.v end
+	        	if imgui.Checkbox(u8'Р РµРєР»Р°РјР° РІ VIP CHAT (/vr)', vr1) then cfg.settings.vr1 = vr1.v end
 				if vr1.v then
-					imgui.Text(u8'Сообщение: ')
+					imgui.Text(u8'РЎРѕРѕР±С‰РµРЅРёРµ: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##vr1", u8"Работает БК Лыткарино №56!", vrmsg1) then cfg.settings.vrmsg1 = vrmsg1.v end
+					if imgui.InputTextWithHint(u8"##vr1", u8"Р Р°Р±РѕС‚Р°РµС‚ Р‘Рљ Р›С‹С‚РєР°СЂРёРЅРѕ в„–56!", vrmsg1) then cfg.settings.vrmsg1 = vrmsg1.v end
 					end
-				if imgui.Checkbox(u8'Реклама в FAMILY CHAT (/fam)', fam) then cfg.settings.fam = fam.v end
+				if imgui.Checkbox(u8'Р РµРєР»Р°РјР° РІ FAMILY CHAT (/fam)', fam) then cfg.settings.fam = fam.v end
 				if fam.v then
-					imgui.Text(u8'Сообщение: ')
+					imgui.Text(u8'РЎРѕРѕР±С‰РµРЅРёРµ: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##fammsg", u8"Работает Ломбард №240!", fammsg) then cfg.settings.fammsg = fammsg.v end
+					if imgui.InputTextWithHint(u8"##fammsg", u8"Р Р°Р±РѕС‚Р°РµС‚ Р›РѕРјР±Р°СЂРґ в„–240!", fammsg) then cfg.settings.fammsg = fammsg.v end
 					end
-				if imgui.Checkbox(u8'Реклама в ALLIANCE CHAT (/al)', al) then cfg.settings.al = al.v end
+				if imgui.Checkbox(u8'Р РµРєР»Р°РјР° РІ ALLIANCE CHAT (/al)', al) then cfg.settings.al = al.v end
 				if al.v then
-					imgui.Text(u8'Сообщение: ')
+					imgui.Text(u8'РЎРѕРѕР±С‰РµРЅРёРµ: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##almsg", u8"Работает БК Лыткарино №56!", almsg) then cfg.settings.almsg = almsg.v end
+					if imgui.InputTextWithHint(u8"##almsg", u8"Р Р°Р±РѕС‚Р°РµС‚ Р‘Рљ Р›С‹С‚РєР°СЂРёРЅРѕ в„–56!", almsg) then cfg.settings.almsg = almsg.v end
 					end
-				if imgui.Checkbox(u8'Реклама в AD (/ad 1)', adbox) then cfg.settings.adbox = adbox.v end
+				if imgui.Checkbox(u8'Р РµРєР»Р°РјР° РІ AD (/ad 1)', adbox) then cfg.settings.adbox = adbox.v end
 				if adbox.v then
-					imgui.Text(u8'Сообщение: ')
+					imgui.Text(u8'РЎРѕРѕР±С‰РµРЅРёРµ: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##admsg1", u8"Работает БК Лыткарино №56!", admsg1) then cfg.settings.admsg1 = admsg1.v end
+					if imgui.InputTextWithHint(u8"##admsg1", u8"Р Р°Р±РѕС‚Р°РµС‚ Р‘Рљ Р›С‹С‚РєР°СЂРёРЅРѕ в„–56!", admsg1) then cfg.settings.admsg1 = admsg1.v end
 					end
-				if imgui.Checkbox(u8'Дополнительная строка', prstring) then cfg.settings.prstring = prstring.v end
+				if imgui.Checkbox(u8'Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ СЃС‚СЂРѕРєР°', prstring) then cfg.settings.prstring = prstring.v end
 				if prstring.v then
-					imgui.Text(u8'Сообщение: ')
+					imgui.Text(u8'РЎРѕРѕР±С‰РµРЅРёРµ: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает Ломбард №240!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
+					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Р Р°Р±РѕС‚Р°РµС‚ Р›РѕРјР±Р°СЂРґ в„–240!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
 					end
 				imgui.Separator()
-				imgui.Text(u8'					Задержка: ')
+				imgui.Text(u8'					Р—Р°РґРµСЂР¶РєР°: ')
 				imgui.SameLine()
 				imgui.PushItemWidth(40)
-				if imgui.InputInt("##Задержка", delay, 0, 0) then cfg.settings.delay = delay.v end
+				if imgui.InputInt("##Р—Р°РґРµСЂР¶РєР°", delay, 0, 0) then cfg.settings.delay = delay.v end
 				imgui.SameLine() 
-				imgui.Text(u8'сек.')			
+				imgui.Text(u8'СЃРµРє.')			
 		    else
-		    	imgui.CenterText(u8'Включите в главном меню функцию PR Manager.')
+		    	imgui.CenterText(u8'Р’РєР»СЋС‡РёС‚Рµ РІ РіР»Р°РІРЅРѕРј РјРµРЅСЋ С„СѓРЅРєС†РёСЋ PR Manager.')
 		    end
 		    imgui.SetCursorPos(imgui.ImVec2(5, 375))
-		    if imgui.Button(u8'Сохранить', imgui.ImVec2(290, 20)) then
+		    if imgui.Button(u8'РЎРѕС…СЂР°РЅРёС‚СЊ', imgui.ImVec2(290, 20)) then
 		        save()
-		        msg('Все настройки сохранены.')
+		        msg('Р’СЃРµ РЅР°СЃС‚СЂРѕР№РєРё СЃРѕС…СЂР°РЅРµРЅС‹.')
 		    end
 
     	imgui.End()
