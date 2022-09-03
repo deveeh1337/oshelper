@@ -628,7 +628,7 @@ function imgui.OnDrawFrame()
     if window.v then
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
-        imgui.Begin('OS Helper | '..updateversion, window, imgui.WindowFlags.NoResize)
+        imgui.Begin('OS Helper | '..thisScript().version, window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
 				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
 				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
