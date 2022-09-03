@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('0.0 alpha')
+script_version('0.1 alpha')
 script_author('deveeh')
 
 -- libraries
@@ -124,6 +124,7 @@ local cfg = inicfg.load({
 		calcbox = false,
 		balloon = false,
 		capcha = false,
+		eat = false,
 		delay = 30,
 		logincard = 123456,
 	}
@@ -136,6 +137,7 @@ local cwindow = imgui.ImBool(false)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local capcha = imgui.ImBool(false)
+local eat = imgui.ImBool(false)
 local active = imgui.ImInt(cfg.settings.active)
 local time = imgui.ImInt(cfg.settings.time)
 local weather = imgui.ImInt(cfg.settings.weather)
@@ -171,7 +173,6 @@ local autolock = imgui.ImBool(cfg.settings.autolock)
 local cardlogin = imgui.ImBool(cfg.settings.cardlogin)
 local spawn = imgui.ImBool(cfg.settings.spawn)
 local logincard = imgui.ImInt(cfg.settings.logincard)
-local key = imgui.ImInt(cfg.settings.key)
 local delay = imgui.ImInt(cfg.settings.delay)
 local plusw = imgui.ImBool(cfg.settings.plusw)
 local prmanager = imgui.ImBool(cfg.settings.prmanager)
@@ -350,6 +351,11 @@ function main()
 		sampRegisterChatCommand('prm', function() 
 			prmwindow.v = not prmwindow.v  
 		end)
+		sampRegisterChatCommand('autoeat', function() 
+			eatoronoff = not eatoronoff
+			if eatonoroff then msg('Автоеда включена') end
+			if not eatonoroff then msg('Автоеда выключена') end
+		end)
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
 		end)
@@ -363,31 +369,33 @@ function main()
         wait(0)
         imgui.Process = window.v or prmwindow.v or cwindow.v or calcactive
         if updateversion ~= thisScript().version then updates = true end
-        calctext = sampGetChatInputText()
-        if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
-            calcactive, number = pcall(load('return '..calctext))
-            result = 'Результат: '..number
-        end
-        if calctext:find('%d+%%%*%d+') then
-            number1, number2 = calctext:match('(%d+)%%%*(%d+)')
-            number = number1*number2/100
-            calcactive, number = pcall(load('return '..number))
-            result = textcolor..'Результат: '..color..number
-        end
-        if calctext:find('%d+%%%/%d+') then
-            number1, number2 = calctext:match('(%d+)%%%/(%d+)')
-            number = number2/number1*100
-            calcactive, number = pcall(load('return '..number))
-            result = 'Результат: '..number
-        end
-        if calctext:find('%d+/%d+%%') then
-            number1, number2 = calctext:match('(%d+)/(%d+)%%')
-            number = number1*100/number2
-            calcactive, number = pcall(load('return '..number))
-            result = 'Результат: '..number..'%'
-        end
-        if calctext == '' then
-            calcactive = false
+        if calcbox.v then
+	        calctext = sampGetChatInputText()
+	        if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
+	            calcactive, number = pcall(load('return '..calctext))
+	            result = 'Результат: '..number
+	        end
+	        if calctext:find('%d+%%%*%d+') then
+	            number1, number2 = calctext:match('(%d+)%%%*(%d+)')
+	            number = number1*number2/100
+	            calcactive, number = pcall(load('return '..number))
+	            result = textcolor..'Результат: '..color..number
+	        end
+	        if calctext:find('%d+%%%/%d+') then
+	            number1, number2 = calctext:match('(%d+)%%%/(%d+)')
+	            number = number2/number1*100
+	            calcactive, number = pcall(load('return '..number))
+	            result = 'Результат: '..number
+	        end
+	        if calctext:find('%d+/%d+%%') then
+	            number1, number2 = calctext:match('(%d+)/(%d+)%%')
+	            number = number1*100/number2
+	            calcactive, number = pcall(load('return '..number))
+	            result = 'Результат: '..number..'%'
+	        end
+	        if calctext == '' then
+	            calcactive = false
+	      	end
         end
         if(isKeyDown(VK_T) and wasKeyPressed(VK_T))then
 					if(not sampIsChatInputActive() and not sampIsDialogActive())then
@@ -415,6 +423,7 @@ function main()
             	end
 			end
 	     	if med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
+	     	if eat.v and isKeyDown(0x12) and wasKeyPressed(0x45) then send('/eat') end
 	     	if armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
 	     		if armourlvl > 89 then 
@@ -678,6 +687,8 @@ function imgui.OnDrawFrame()
 				imgui.TextQuestion(u8'Использовать нарко: ALT + 3')
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
 				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
+				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
+				imgui.TextQuestion(u8'Использовать чипсы: ALT + E.')
 			end
 			if menu == 2 then
 				imgui.PushFont(fontsize)
