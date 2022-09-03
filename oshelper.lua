@@ -811,7 +811,7 @@ function imgui.OnDrawFrame()
     if prmwindow.v then
     	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
-    	imgui.Begin('OS Helper | '....updateversion..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
+    	imgui.Begin('OS Helper | '..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
         			imgui.CenterText(u8'PR Manager | Menu')
         			imgui.CenterText(u8'Активация /pr')
