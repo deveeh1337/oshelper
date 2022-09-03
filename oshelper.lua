@@ -423,7 +423,7 @@ function main()
 	     	end
 	     	if drugs.v and isKeyDown(0x12) and wasKeyPressed(0x33) then send('/usedrugs 3') end
 	     	if rem.v and wasKeyPressed(0x52) then send('/repcar') end
-	     	if fill.v and isKeyDown(0x12) and wasKeyPressed(0x52) then send('/fillcar') end
+	     	if fill.v and wasKeyPressed(0x42) then send('/fillcar') end
 	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) send('/faminvite '..id) end
 	     	if fmenu.v and wasKeyPressed(0x4F) then send('/fammenu') end
 	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
@@ -683,7 +683,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
 				imgui.TextQuestion(u8'Использовать ремкомплект: R')
 				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
-				imgui.TextQuestion(u8'Использовать канистру: ALT + R')
+				imgui.TextQuestion(u8'Использовать канистру: B')
 				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
 				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
 				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
