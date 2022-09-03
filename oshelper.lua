@@ -8,7 +8,6 @@ require 'lib.moonloader'
 local imgui = require('imgui')
 local dlstatus = require('moonloader').download_status
 local encoding = require 'encoding'
-local vkeys = require 'vkeys'
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 local fa = require 'fAwesome5'
@@ -127,14 +126,11 @@ local cfg = inicfg.load({
 		capcha = false,
 		delay = 30,
 		logincard = 123456,
-		key = 113,
-		record = nil
 	}
 }, "OSHelper")
 
 -- variables
 local window = imgui.ImBool(false)
-local status = false
 local prmwindow = imgui.ImBool(false)
 local cwindow = imgui.ImBool(false)
 local color = cfg.settings.color
@@ -260,116 +256,6 @@ function save()
 	inicfg.save(cfg, 'OSHelper.ini')
 end
 
-function floorStep(num, step)
-   return num - num % step
-end
-
-function onWindowMessage(msg, wparam, lparam)
-    if sampGetCurrentDialogId() == 22222 and sampIsDialogActive() and not firstKey then
-	    for _, key in pairs(tKeys) do
-	    	if wparam == key and isKeyDown(key) then 
-	    		firstKey = true
-	    		firstKeyTime = floorStep(os.clock() - startTime, 0.01)
-	    	end
-	    end
-	end
-end
-
-tKeys = {
-	0x60, 0x30, 0x61, 0x31,
-	0x62, 0x32, 0x63, 0x33,
-	0x64, 0x34, 0x65, 0x35,
-	0x66, 0x36, 0x67, 0x37,
-	0x68, 0x38, 0x69, 0x39
-}
-
-function getDialog()
-	status = true
-	startTime = os.clock()
-	firstKey = false
-	math.randomseed(os.clock())
-
-	-- generate captcha
-	captcha = tostring(math.random(1000, 9999)) -- first four nums
-	captcha = captcha:gsub(captcha, (math.random(1, 10) <= 6 and captcha..'0' or captcha..tostring(math.random(1, 9)))) -- 60% chance that the last num is zero
-	captcha = tonumber(captcha) -- tostring in tonumber
-
-	-- generate thickness
-	rth = {
-		[1] = math.random(8, 15),
-		[2] = math.random(8, 15),
-		[3] = math.random(8, 15),
-		[4] = math.random(8, 15),
-		[5] = math.random(8, 15)
-	}
-
-	-- offset digit 1 by x
-	oneOffset = math.random(0, 45)
-	sampShowDialog(22222, "{FF8B7A}Проверка на робота", "{ffffff}Введите {6CFF92}5{FFFFFF} символов, которые\nвидно на {6CFF92}вашем{FFFFFF} экране", "Принять", "Отмена", 1)
-end
-
-function drawCaptchaNum(num, posX, posY, thickness, color)
-	if num == 1 then
-		renderDrawBox(posX + oneOffset, posY, thickness, 70, color)
-	end
-	if num == 2 then 
-		renderDrawBox(posX, posY, 50, thickness, color)
-		renderDrawBox(posX + 50, posY, thickness, 30, color)
-		renderDrawBox(posX, posY + 30, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY + 30, thickness, 30, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-	if num == 3 then
-		renderDrawBox(posX, posY, 50, thickness, color)
-		renderDrawBox(posX, posY + 30, 50, thickness, color)
-		renderDrawBox(posX, posY + 60, 50, thickness, color)
-		renderDrawBox(posX + 50, posY, thickness, 60 + thickness, color)
-	end
-	if num == 4 then
-		renderDrawBox(posX, posY, thickness, 30, color)
-		renderDrawBox(posX, posY + 30, 50, thickness, color)
-		renderDrawBox(posX + 50, posY, thickness, 70, color)
-	end
-	if num == 5 then 
-		renderDrawBox(posX, posY, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY, thickness, 30, color)
-		renderDrawBox(posX, posY + 30, 50 + thickness, thickness, color)
-		renderDrawBox(posX + 50, posY + 30, thickness, 30, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-	if num == 6 then 
-		renderDrawBox(posX, posY, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY, thickness, 60, color)
-		renderDrawBox(posX, posY + 30, 50 + thickness, thickness, color)
-		renderDrawBox(posX + 50, posY + 30, thickness, 30, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-	if num == 7 then
-		renderDrawBox(posX + 40, posY, thickness, 70, color)
-		renderDrawBox(posX, posY, 40, thickness, color)
-	end
-	if num == 8 then 
-		renderDrawBox(posX, posY, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY, thickness, 60, color)
-		renderDrawBox(posX, posY + 30, 50 + thickness, thickness, color)
-		renderDrawBox(posX + 50, posY, thickness, 60, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-	if num == 9 then 
-		renderDrawBox(posX, posY, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY, thickness, 30, color)
-		renderDrawBox(posX, posY + 30, 50 + thickness, thickness, color)
-		renderDrawBox(posX + 50, posY, thickness, 60, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-	if num == 0 then 
-		renderDrawBox(posX, posY, 50 + thickness, thickness, color)
-		renderDrawBox(posX, posY, thickness, 60, color)
-		renderDrawBox(posX + 50, posY, thickness, 60, color)
-		renderDrawBox(posX, posY + 60, 50 + thickness, thickness, color)
-	end
-end
-
 function imgui.offset(text)
     local offset = 130
     imgui.Text(text)
@@ -475,6 +361,7 @@ function main()
 	end
     while true do
         wait(0)
+        imgui.Process = window.v or prmwindow.v or cwindow.v or calcactive
         if updateversion ~= thisScript().version then updates = true end
         calctext = sampGetChatInputText()
         if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
@@ -507,14 +394,16 @@ function main()
 				sampSetChatInputEnabled(true)
 			end
 		end
+		end
+		end
         if timeweather.v then
       		setTimeOfDay(time.v, 0)
       		forceWeatherNow(weather.v)
-    	end
+    		end
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     	if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
-        imgui.Process = window.v or prmwindow.v or cwindow.v or calcactive
+
         -- hotkeys
         if not sampIsCursorActive() then
         	if balloon.v and isKeyDown(0x12) and isKeyDown(0x43) then setVirtualKeyDown(1, true) wait(50) setVirtualKeyDown (1, false) end
@@ -550,14 +439,15 @@ function main()
 	    end
 	    if plusw.v then
 		    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
-				if bike[getCarModel(storeCarCharIsInNoSave(playerPed))] then
-					setGameKeyState(16, 255)
-					wait(10)
-					setGameKeyState(16, 0)
-				elseif moto[getCarModel(storeCarCharIsInNoSave(playerPed))] then
-					setGameKeyState(1, -128)
-					wait(10)
-					setGameKeyState(1, 0)
+					if bike[getCarModel(storeCarCharIsInNoSave(playerPed))] then
+						setGameKeyState(16, 255)
+						wait(10)
+						setGameKeyState(16, 0)
+					elseif moto[getCarModel(storeCarCharIsInNoSave(playerPed))] then
+						setGameKeyState(1, -128)
+						wait(10)
+						setGameKeyState(1, 0)
+					end
 				end
 			end	
 
@@ -612,7 +502,7 @@ end
 
 function inputChat()
 	while true do
-		if(sampIsChatInputActive())then
+		if sampIsChatInputActive() then
 			local getInput = sampGetChatInputText()
 			if(oldText ~= getInput and #getInput > 0)then
 				local firstChar = string.sub(getInput, 1, 1)
