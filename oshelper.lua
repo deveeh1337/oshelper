@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 alpha')
+script_version('0.0 alpha')
 script_author('deveeh')
 
 -- libraries
@@ -390,12 +390,10 @@ function main()
             calcactive = false
         end
         if(isKeyDown(VK_T) and wasKeyPressed(VK_T))then
-			if(not sampIsChatInputActive() and not sampIsDialogActive())then
-				sampSetChatInputEnabled(true)
-			end
-		end
-		end
-		end
+					if(not sampIsChatInputActive() and not sampIsDialogActive())then
+						sampSetChatInputEnabled(true)
+					end
+				end
         if timeweather.v then
       		setTimeOfDay(time.v, 0)
       		forceWeatherNow(weather.v)
@@ -404,7 +402,8 @@ function main()
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     	if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
 
-        -- hotkeys
+        
+    -- hotkeys
         if not sampIsCursorActive() then
         	if balloon.v and isKeyDown(0x12) and isKeyDown(0x43) then setVirtualKeyDown(1, true) wait(50) setVirtualKeyDown (1, false) end
         	if mask.v and isKeyDown(0x12) and wasKeyPressed(0x32) then send('/mask') end
@@ -436,20 +435,22 @@ function main()
 	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) send('/faminvite '..id) end
 	     	if fmenu.v and wasKeyPressed(0x4F) then send('/fammenu') end
 	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
-	    end
-	    if plusw.v then
-		    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
-					if bike[getCarModel(storeCarCharIsInNoSave(playerPed))] then
-						setGameKeyState(16, 255)
-						wait(10)
-						setGameKeyState(16, 0)
-					elseif moto[getCarModel(storeCarCharIsInNoSave(playerPed))] then
-						setGameKeyState(1, -128)
-						wait(10)
-						setGameKeyState(1, 0)
+		    if plusw.v then
+			    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
+						if bike[getCarModel(storeCarCharIsInNoSave(playerPed))] then
+							setGameKeyState(16, 255)
+							wait(10)
+							setGameKeyState(16, 0)
+						elseif moto[getCarModel(storeCarCharIsInNoSave(playerPed))] then
+							setGameKeyState(1, -128)
+							wait(10)
+							setGameKeyState(1, 0)
+						end
 					end
-				end
-			end	
+				end	
+			end
+		end
+	end
 
 
 function getStrByState(keyState)
