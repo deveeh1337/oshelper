@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('0.2 alpha')
+script_version('1.0 beta')
 script_author('deveeh')
 
 -- libraries
@@ -713,7 +713,7 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' Окружение', menu == 8) then menu = 8
 				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Работа с чатом', menu == 4) then menu = 4
 				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Работа с диалогами', menu == 5) then menu = 5
-				elseif imgui.Selectable(fa.ICON_FA_VOLUME_UP..u8' OS Player', menu == 9) then menu = 9
+				elseif imgui.Selectable(fa.ICON_FA_VOLUME_UP..u8' OS Music', menu == 9) then menu = 9
 				elseif imgui.Selectable(fa.ICON_FA_COG..u8' Настройки', menu == 6) then menu = 6
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
@@ -893,11 +893,11 @@ function imgui.OnDrawFrame()
 			end
 			if menu == 9 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'OS Player - музыкальный плеер')
+        			imgui.CenterText(u8'OS Music - музыкальный плеер')
         		imgui.PopFont()
 				imgui.Separator()
-				if imgui.Checkbox(u8'OS Player', osplayer) then cfg.settings.osplayer = osplayer.v end
-				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, \nоткройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Player.')
+				if imgui.Checkbox(u8'OS Music', osplayer) then cfg.settings.osplayer = osplayer.v end
+				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Player.')
 			end
 			imgui.EndChild()
         imgui.End()
@@ -976,7 +976,7 @@ function imgui.OnDrawFrame()
 			local sw, sh = getScreenResolution()
 			imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 			imgui.SetNextWindowSize(imgui.ImVec2(320, 400), imgui.Cond.FirstUseEver)
-			imgui.Begin(u8'OS Player | OS Helper '..thisScript().version..'##music', musicmenu, imgui.WindowFlags.NoResize)
+			imgui.Begin(u8'OS Music | OS Helper '..thisScript().version..'##music', musicmenu, imgui.WindowFlags.NoResize)
 			local btn_size = imgui.ImVec2(-0.1, 0)
 				imgui.BeginChild('##high', imgui.ImVec2(300, 325), true)
 				for num, name, number in pairs(musiclist) do
