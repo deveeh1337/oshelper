@@ -16,11 +16,15 @@ local inicfg = require 'inicfg'
 local sampev = require 'lib.samp.events'
 local ffi = require("ffi")
 local mem = require "memory"
+local as_action = require('moonloader').audiostream_state
 ffi.cdef[[
 	short GetKeyState(int nVirtKey);
 	bool GetKeyboardLayoutNameA(char* pwszKLID);
 	int GetLocaleInfoA(int Locale, int LCType, char* lpLCData, int cchData);
 ]]
+local number = 1
+local antiafkmode = imgui.ImBool(false)
+local radiobutton = imgui.ImInt(0)
 local BuffSize = 32
 local KeyboardLayoutName = ffi.new("char[?]", BuffSize)
 local LocalInfo = ffi.new("char[?]", BuffSize)
@@ -115,6 +119,7 @@ local cfg = inicfg.load({
 		vrmsg1 = ' ',
 		fammsg = ' ',
 		admsg1 = ' ',
+		volume = 5,
 		stringmsg = ' ',
 		almsg = ' ',
 		adbox = false,
@@ -125,6 +130,8 @@ local cfg = inicfg.load({
 		balloon = false,
 		capcha = false,
 		eat = false,
+		podarok = false,
+		osplayer = false,
 		delay = 30,
 		logincard = 123456,
 	}
@@ -132,6 +139,7 @@ local cfg = inicfg.load({
 
 -- variables
 local window = imgui.ImBool(false)
+local musicmenu = imgui.ImBool(false)
 local prmwindow = imgui.ImBool(false)
 local cwindow = imgui.ImBool(false)
 local color = cfg.settings.color
@@ -178,6 +186,8 @@ local plusw = imgui.ImBool(cfg.settings.plusw)
 local prmanager = imgui.ImBool(cfg.settings.prmanager)
 local timeweather = imgui.ImBool(cfg.settings.timeweather)
 local chathelper = imgui.ImBool(cfg.settings.chathelper)
+local podarok = imgui.ImBool(cfg.settings.podarok)
+local osplayer = imgui.ImBool(cfg.settings.osplayer)
 local pronoroff = false
 local menu = 1
 
@@ -294,7 +304,14 @@ function main()
     while not isSampAvailable() do wait(200) end
     _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
+    if not doesDirectoryExist('moonloader/OS Helper') then createDirectory('moonloader/OS Helper') end
+    if not doesDirectoryExist('moonloader/OS Helper/OS Player') then createDirectory('moonloader/OS Helper/OS Player') end
     inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
+    if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
+		elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
+		elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
+		else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
+		end
 	lua_thread.create(inputChat)
 	lua_thread.create(showInputHelp)
     imgui.Process = false
@@ -351,10 +368,12 @@ function main()
 		sampRegisterChatCommand('prm', function() 
 			prmwindow.v = not prmwindow.v  
 		end)
-		sampRegisterChatCommand('autoeat', function() 
-			eatoronoff = not eatoronoff
-			if eatonoroff then msg('Автоеда включена') end
-			if not eatonoroff then msg('Автоеда выключена') end
+		sampRegisterChatCommand('osmusic', function()
+			if osplayer.v then 
+				musicmenu.v = not musicmenu.v 
+			else
+				msg('Сначала включите OS Player в главном меню.')
+			end
 		end)
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
@@ -367,7 +386,7 @@ function main()
 	end
     while true do
         wait(0)
-        imgui.Process = window.v or prmwindow.v or cwindow.v or calcactive
+        imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or calcactive
         if updateversion ~= thisScript().version then updates = true end
         if calcbox.v then
 	        calctext = sampGetChatInputText()
@@ -423,7 +442,7 @@ function main()
             	end
 			end
 	     	if med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
-	     	if eat.v and isKeyDown(0x12) and wasKeyPressed(0x45) then send('/eat') end
+	     	if eat.v and isKeyDown(0x12) and wasKeyPressed(0x35) then send('/eat') end
 	     	if armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
 	     		if armourlvl > 89 then 
@@ -474,6 +493,29 @@ function translite(text)
 	end
 	return text
 end
+
+--[[function sampev.onServerMessage(color, text)
+	if clear_server.v then 
+		if text:find("~~~~~~~~~~~~~~~~~~~~~~~~~~") and not text:find('говорит') then
+			return false
+		end
+		if text:find("- Основные команды") and not text:find('говорит') then
+			return false
+		end
+		if text:find("- Пригласи друга") and not text:find('говорит') then
+			return false
+		end
+		if text:find("- Донат и получение") and not text:find('говорит') then
+			return false
+		end
+		if text:find("Приходите на мероприятие: 'Дерби'") and not text:find('говорит') then
+			return false
+		end
+		if text:find("Уважаемые игроки, за нарушение РП процесса") and not text:find('говорит') then
+			return false
+		end
+	end
+end]]--
 
 function showInputHelp()
 	while true do
@@ -630,10 +672,28 @@ function piar()
 	end)
 end
 
+function getMusicList()
+	local files = {}
+	local handleFile, nameFile = findFirstFile('moonloader/OS Helper/OS Player/*.mp3')
+	while nameFile do
+		if handleFile then
+			if not nameFile then 
+				findClose(handleFile)
+			else
+				files[#files+1] = nameFile
+				nameFile = findNextFile(handleFile)
+			end
+		end
+	end
+	return files
+end
+
 function sampev.onShowDialog(id, style, title, button1, button0, text)
 	if cardlogin.v then if id == 991 then sampSendDialogResponse(991, 1, -1, logincard.v) end end
+	if podarok.v then if id == 1449 then lua_thread.create(function() sampSendDialogResponse(1449, 1, 1, nil) wait(50) setVirtualKeyDown(13, true) end) end end
 end
 -- imgui
+local volume = imgui.ImInt(5)
 function imgui.OnDrawFrame()
 	local resX, resY = getScreenResolution()
 	local sizeX, sizeY = 500.0, 325.0
@@ -653,6 +713,7 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' Окружение', menu == 8) then menu = 8
 				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Работа с чатом', menu == 4) then menu = 4
 				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Работа с диалогами', menu == 5) then menu = 5
+				elseif imgui.Selectable(fa.ICON_FA_VOLUME_UP..u8' OS Player', menu == 9) then menu = 9
 				elseif imgui.Selectable(fa.ICON_FA_COG..u8' Настройки', menu == 6) then menu = 6
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
@@ -688,7 +749,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
 				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
 				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
-				imgui.TextQuestion(u8'Использовать чипсы: ALT + E.')
+				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5.')
 			end
 			if menu == 2 then
 				imgui.PushFont(fontsize)
@@ -830,6 +891,14 @@ function imgui.OnDrawFrame()
 					end
 				end
 			end
+			if menu == 9 then
+				imgui.PushFont(fontsize)
+        			imgui.CenterText(u8'OS Player - музыкальный плеер')
+        		imgui.PopFont()
+				imgui.Separator()
+				if imgui.Checkbox(u8'OS Player', osplayer) then cfg.settings.osplayer = osplayer.v end
+				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, \nоткройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Player.')
+			end
 			imgui.EndChild()
         imgui.End()
     end
@@ -902,6 +971,65 @@ function imgui.OnDrawFrame()
         imgui.CenterText(u8(number_separator(result)))
         imgui.End()
     end
+    if musicmenu.v then 
+	    local musiclist = getMusicList()
+			local sw, sh = getScreenResolution()
+			imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+			imgui.SetNextWindowSize(imgui.ImVec2(320, 400), imgui.Cond.FirstUseEver)
+			imgui.Begin(u8'OS Player | OS Helper '..thisScript().version..'##music', musicmenu, imgui.WindowFlags.NoResize)
+			local btn_size = imgui.ImVec2(-0.1, 0)
+				imgui.BeginChild('##high', imgui.ImVec2(300, 325), true)
+				for num, name, number in pairs(musiclist) do
+					local name = name:gsub('.mp3', '')
+					if imgui.RadioButton(u8(name), radiobutton, num) then selected = num status = true end
+				end
+				imgui.EndChild()
+				imgui.BeginChild('##low', imgui.ImVec2(300, 35), true)
+				imgui.SameLine()
+					for num, name in pairs(musiclist) do
+						if num == selected then
+							imgui.Text('		  ')			
+							imgui.SameLine()
+								if status then
+									if imgui.Button(fa.ICON_FA_PLAY..'') then
+										if playsound ~= nil then setAudioStreamState(playsound, as_action.STOP) playsound = nil end
+										playsound = loadAudioStream('moonloader/OS Helper/OS Player/'..name)
+										setAudioStreamState(playsound, as_action.PLAY)
+										pause = false
+										status = false
+										lua_thread.create(function()
+											while true do
+												setAudioStreamVolume(playsound, math.floor(volume.v))
+												wait(0)
+											end
+										end)
+									end
+								elseif status == false then 
+									if not pause then if imgui.Button(fa.ICON_FA_PAUSE..u8'') then pause = true if playsound ~= nil then setAudioStreamState(playsound, as_action.PAUSE)  end end
+									imgui.SameLine(nil, 3)
+									elseif pause then if imgui.Button(fa.ICON_FA_PLAY..u8'') then pause = false if playsound ~= nil then setAudioStreamState(playsound, as_action.RESUME) end end 
+									end
+								end
+						
+						imgui.SameLine()
+						imgui.Text(u8'Громкость:')
+						imgui.SameLine()
+						imgui.PushItemWidth(70)
+						if imgui.InputInt('', volume) then
+							if volume.v > 10 then
+								volume.v = 10
+							elseif volume.v  < 0 then
+								volume.v  = 0
+							end
+							cfg.settings.volume = volume.v
+							save()
+						end 
+					end 
+				end
+					if playsound ~= nil then setAudioStreamVolume(playsound, math.floor(volume.v)) end
+				imgui.EndChild()
+			imgui.End()
+	end
 end
 
 -- theme
