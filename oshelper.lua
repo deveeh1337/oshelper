@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.1 beta')
 script_author('deveeh')
 
 -- libraries
@@ -94,11 +94,16 @@ local cfg = inicfg.load({
 		active = 0,
 		cheatcode = 'oh',
 		theme = 0,
+		gunmode = 0,
+		bullet = 50,
 		time = 0,
 		weather = 15,
 		cmds = false,
 		armor = false,
+		hello = true,
 		med = false,
+		autoeat = false,
+		bus = false,
 		drugs = false,
 		rem = false,
 		fill = false,
@@ -112,6 +117,8 @@ local cfg = inicfg.load({
 		spawn = false,
 		prmanager = false,
 		vr1 = false,
+		automed = false,
+		hpmed = 20,
 		prstring = false,
 		vr2 = false,
 		fam = false,
@@ -123,17 +130,28 @@ local cfg = inicfg.load({
 		stringmsg = ' ',
 		almsg = ' ',
 		adbox = false,
+		vskin = false,
 		adbox2 = false,
 		plusw = false,
 		chathelper = false,
+		drift = false,
 		calcbox = false,
 		balloon = false,
 		capcha = false,
 		eat = false,
 		podarok = false,
 		osplayer = false,
+		gunmaker = false,
+		armortimer = false,
+		drugstimer = false,
+		vskin = false,
+		jump = false,
+		buttonjump = 0,
 		delay = 30,
+		edelay = 0,
+		fisheye = false,
 		logincard = 123456,
+		fov = 101,
 	}
 }, "OSHelper")
 
@@ -142,19 +160,35 @@ local window = imgui.ImBool(false)
 local musicmenu = imgui.ImBool(false)
 local prmwindow = imgui.ImBool(false)
 local cwindow = imgui.ImBool(false)
+local bushelper = imgui.ImBool(false)
+local minehelper = imgui.ImBool(false)
+local farmhelper = imgui.ImBool(false)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local capcha = imgui.ImBool(false)
-local eat = imgui.ImBool(false)
+local eat = imgui.ImBool(cfg.settings.eat)
+local jump = imgui.ImBool(cfg.settings.jump)
+local drift = imgui.ImBool(cfg.settings.drift)
+local bus = imgui.ImBool(cfg.settings.bus)
 local active = imgui.ImInt(cfg.settings.active)
+local edelay = imgui.ImInt(cfg.settings.edelay)
+local gunmode = imgui.ImInt(cfg.settings.gunmode)
+local buttonjump = imgui.ImInt(cfg.settings.buttonjump)
+local bullet = imgui.ImInt(cfg.settings.bullet)
 local time = imgui.ImInt(cfg.settings.time)
 local weather = imgui.ImInt(cfg.settings.weather)
 local cheatcode = imgui.ImBuffer(''..cfg.settings.cheatcode, 256)
 local vrmsg1 = imgui.ImBuffer(''..cfg.settings.vrmsg1, 256)
 local vrmsg2 = imgui.ImBuffer(256)
 local vr1 = imgui.ImBool(cfg.settings.vr1)
+local gunmaker = imgui.ImBool(cfg.settings.gunmaker)
+local vskin = imgui.ImBool(cfg.settings.vskin)
+local armortimer = imgui.ImBool(cfg.settings.armortimer)
+local drugstimer = imgui.ImBool(cfg.settings.drugstimer)
+local vskin = imgui.ImBool(cfg.settings.vskin)
 local calcbox = imgui.ImBool(cfg.settings.calcbox)
 local vr2 = imgui.ImBool(cfg.settings.vr2)
+local fisheye = imgui.ImBool(cfg.settings.fisheye)
 local fammsg = imgui.ImBuffer(''..cfg.settings.fammsg, 256)
 local prstring = imgui.ImBool(cfg.settings.prstring)
 local stringmsg = imgui.ImBuffer(''..cfg.settings.stringmsg, 256)
@@ -167,12 +201,14 @@ local fam = imgui.ImBool(cfg.settings.fam)
 local al = imgui.ImBool(cfg.settings.al)
 local theme = imgui.ImInt(cfg.settings.theme)
 local cmds = imgui.ImBool(cfg.settings.cmds)
+local hello = imgui.ImBool(cfg.settings.hello)
 local armor = imgui.ImBool(cfg.settings.armor)
 local med = imgui.ImBool(cfg.settings.med)
 local drugs = imgui.ImBool(cfg.settings.drugs)
 local rem = imgui.ImBool(cfg.settings.rem)
 local balloon = imgui.ImBool(cfg.settings.balloon)
 local fill = imgui.ImBool(cfg.settings.fill)
+local fov = imgui.ImInt(cfg.settings.fov)
 local mask = imgui.ImBool(cfg.settings.mask)
 local fmenu = imgui.ImBool(cfg.settings.fmenu)
 local finv = imgui.ImBool(cfg.settings.finv)
@@ -181,6 +217,10 @@ local autolock = imgui.ImBool(cfg.settings.autolock)
 local cardlogin = imgui.ImBool(cfg.settings.cardlogin)
 local spawn = imgui.ImBool(cfg.settings.spawn)
 local logincard = imgui.ImInt(cfg.settings.logincard)
+local hpmed = imgui.ImInt(cfg.settings.hpmed)
+local setskin = 0
+local autoeat = imgui.ImBool(cfg.settings.autoeat)
+local automed = imgui.ImBool(cfg.settings.automed)
 local delay = imgui.ImInt(cfg.settings.delay)
 local plusw = imgui.ImBool(cfg.settings.plusw)
 local prmanager = imgui.ImBool(cfg.settings.prmanager)
@@ -190,6 +230,10 @@ local podarok = imgui.ImBool(cfg.settings.podarok)
 local osplayer = imgui.ImBool(cfg.settings.osplayer)
 local pronoroff = false
 local menu = 1
+local salary = 0
+local stop = 0
+local cases = 0
+local chert = 0
 
 bike = {[481] = true, [509] = true, [510] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
@@ -299,18 +343,45 @@ function number_separator(n)
 	return left..(num:reverse():gsub('(%d%d%d)','%1 '):reverse())..right
 end
 
+function nsc_cmd( arg )
+	if vskin.v then
+		if #arg == 0 then 
+			sampAddChatMessage("/skin ID",-1)
+		else
+			local skinid = tonumber(arg)
+			if skinid == 0 then 
+				setskin = 0
+			else
+				setskin = skinid
+				_, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+				set_player_skin(id, setskin)
+			end
+		end
+	else
+		msg('Функция Skin Changer не включена в главном меню.')
+	end
+end
+
 -- main
 function main()
     while not isSampAvailable() do wait(200) end
     _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
     if not doesDirectoryExist('moonloader/OS Helper') then createDirectory('moonloader/OS Helper') end
-    if not doesDirectoryExist('moonloader/OS Helper/OS Player') then createDirectory('moonloader/OS Helper/OS Player') end
+    if not doesDirectoryExist('moonloader/OS Helper/OS Music') then createDirectory('moonloader/OS Helper/OS Music') end
     inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
     if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 		elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
 		elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
 		else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
+		end
+		if hello.v then
+			if active.v == 0 then
+				msg('Авторы: '..color..'deveeh'..textcolor..' и '..color..'casparo'..textcolor..'. Команда активации: '..color..'/oshelper') 
+			end
+			if active.v == 1 then
+				msg('Авторы: '..color..'deveeh'..textcolor..' и '..color..'casparo'..textcolor..'. Чит-код: '..color..cfg.settings.cheatcode) 
+			end
 		end
 	lua_thread.create(inputChat)
 	lua_thread.create(showInputHelp)
@@ -330,6 +401,7 @@ function main()
 				sampSendChat('/findihouse '..num) 
 			end
 		end)
+	    sampRegisterChatCommand("skin", nsc_cmd)
 		sampRegisterChatCommand('fbiz', function(num) 
 			if cmds.v then 
 				sampSendChat('/findibiz '..num) 
@@ -362,7 +434,29 @@ function main()
 		end)
 		sampRegisterChatCommand('oshelper', function() 
 			if active.v == 0 then 
-				window.v = not window.v 
+				window.v = not window.v
+			else
+				msg('У вас включена активация через чит-код ('..cfg.settings.cheatcode..')') 
+			end 
+		end)
+		sampRegisterChatCommand("bus", function()
+			if bus.v then 
+				bushelper.v = not bushelper.v
+			else
+				msg('У вас не включена функция Bus Helper.')  
+			end 
+		end)
+		sampRegisterChatCommand('cg', function() 
+			if gunmaker.v then 
+				if gunmode.v == 0 then
+					send('/sellgun '..id..' deagle '..cfg.settings.bullet)
+				elseif gunmode.v == 1 then
+					send('/sellgun '..id..' deagle '..cfg.settings.bullet)
+				elseif gunmode.v == 2 then
+					send('/sellgun '..id..' shotgun '..cfg.settings.bullet)
+				end
+			else
+				msg('Сначала нужно включить функцию крафта оружия.')
 			end 
 		end)
 		sampRegisterChatCommand('prm', function() 
@@ -372,11 +466,38 @@ function main()
 			if osplayer.v then 
 				musicmenu.v = not musicmenu.v 
 			else
-				msg('Сначала включите OS Player в главном меню.')
+				msg('Сначала включите OS Music в главном меню.')
 			end
 		end)
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
+		end)
+		sampRegisterChatCommand('jump', function() 
+			lua_thread.create(function()
+			if jump.v then
+				send('OS Helper - лучший хелпер для родины рп.')
+				wait(50)
+				if buttonjump.v == 0 then
+					setVirtualKeyDown(32, true)
+					wait(50) 
+					setVirtualKeyDown(32, false)
+					wait(100) 
+					setVirtualKeyDown(32, true)
+					wait(50) 
+					setVirtualKeyDown(32, false)
+				else
+					setVirtualKeyDown(160, true)
+					wait(50) 
+					setVirtualKeyDown(160, false)
+					wait(100) 
+					setVirtualKeyDown(160, true)
+					wait(50) 
+					setVirtualKeyDown(160, false)
+				end
+			else
+				msg('У вас выключена функция Двойного Прыжка.')
+			end
+			end)
 		end)
     local ip, port = sampGetCurrentServerAddress()
 	if ip == '185.169.134.163' and port == 7777 then serverName = 'Rodina RP | Central District'
@@ -386,8 +507,15 @@ function main()
 	end
     while true do
         wait(0)
-        imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or calcactive
+        imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or bushelper.v or calcactive
         if updateversion ~= thisScript().version then updates = true end
+        if fisheye.v then
+	        if isCurrentCharWeapon(PLAYER_PED, 34) and isKeyDown(2) then
+							cameraSetLerpFov(fov.v, fov.v, 1000, 1)
+					else
+						cameraSetLerpFov(fov.v, fov.v, 1000, 1)
+					end
+				end
         if calcbox.v then
 	        calctext = sampGetChatInputText()
 	        if calctext:find('%d+') and calctext:find('[-+/*^%%]') and not calctext:find('%a+') and calctext ~= nil then
@@ -427,7 +555,29 @@ function main()
     		end
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
-    	if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
+    		if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
+
+    		if drift.v then
+	    		if isCharInAnyCar(playerPed) then 
+						local car = storeCarCharIsInNoSave(playerPed)
+						local speed = getCarSpeed(car)
+						isCarInAirProper(car)
+						setCarCollision(car, true)
+							if isKeyDown(VK_LSHIFT) and isVehicleOnAllWheels(car) and doesVehicleExist(car) and speed > 5.0 then
+							setCarCollision(car, false)
+								if isCarInAirProper(car) then setCarCollision(car, true)
+								if isKeyDown(VK_A)
+								then 
+								addToCarRotationVelocity(car, 0, 0, 0.15)
+								end
+								if isKeyDown(VK_D)
+								then 			
+								addToCarRotationVelocity(car, 0, 0, -0.15)	
+								end
+							end
+						end
+					end
+				end
 
         
     -- hotkeys
@@ -442,20 +592,27 @@ function main()
             	end
 			end
 	     	if med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
+	     	local hpplayer = getCharHealth(PLAYER_PED)
+	     	if med.v and automed.v then 
+	     		hpcheck = hpmed.v + 1
+	     		if hpplayer < hpcheck then send('/usemed') wait(1000) end
+	     	end
 	     	if eat.v and isKeyDown(0x12) and wasKeyPressed(0x35) then send('/eat') end
 	     	if armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
 	     		if armourlvl > 89 then 
 		     		msg('У вас '..armourlvl..' процентов брони.')
-		     	elseif armourlvl > 0 then
-		     		lua_thread.create(function() 
-		     			send('/armour')
-		     			wait(500)
-		     			send('/armour')
-		     		end)
-		     	elseif armourlvl == 0 then
-		     		send('/armour')
-		     	end
+		     	elseif armourlvl < 90 then
+		     		if armourlvl > 0 then
+			     		lua_thread.create(function() 
+			     			send('/armour')
+			     			wait(500)
+			     			send('/armour')
+			     		end)
+			     	elseif armourlvl == 0 then
+			     		send('/armour')
+			     	end
+			    end
 	     	end
 	     	if drugs.v and isKeyDown(0x12) and wasKeyPressed(0x33) then send('/usedrugs 3') end
 	     	if rem.v and wasKeyPressed(0x52) then send('/repcar') end
@@ -552,6 +709,10 @@ function showInputHelp()
 	end
 end
 
+function onWindowMessage(msg, wparam, lparam)
+	if msg == 261 and wparam == 13 then consumeWindowMessage(true, true) end
+end
+
 function inputChat()
 	while true do
 		if sampIsChatInputActive() then
@@ -581,7 +742,7 @@ function sampev.onSendEnterVehicle(id, pass)
 	        if not isCharInAnyCar(PLAYER_PED) then
 	        wait(3000)
 	        sampSendChat('/engine')
-	        wait(500)
+	        wait(1000)
 	        sampSendChat('/lock')
 	    end
 	    end)
@@ -674,7 +835,7 @@ end
 
 function getMusicList()
 	local files = {}
-	local handleFile, nameFile = findFirstFile('moonloader/OS Helper/OS Player/*.mp3')
+	local handleFile, nameFile = findFirstFile('moonloader/OS Helper/OS Music/*.mp3')
 	while nameFile do
 		if handleFile then
 			if not nameFile then 
@@ -690,7 +851,59 @@ end
 
 function sampev.onShowDialog(id, style, title, button1, button0, text)
 	if cardlogin.v then if id == 991 then sampSendDialogResponse(991, 1, -1, logincard.v) end end
-	if podarok.v then if id == 1449 then lua_thread.create(function() sampSendDialogResponse(1449, 1, 1, nil) wait(50) setVirtualKeyDown(13, true) end) end end
+end
+function sampev.onServerMessage(color, text)
+		if drugstimer.v then
+			if text:find('Здоровье пополнено на') then
+				lua_thread.create(function() 
+				printStringNow(u8'DRUGS: Timer started.', 5000)
+				wait(20000)
+				printStringNow(u8'DRUGS: 40 sec.', 5000)
+				wait(20000)
+				printStringNow(u8'DRUGS: 20 sec.', 5000)
+				wait(15000)
+				printStringNow(u8'DRUGS: 5 sec.', 3000)
+				wait(5000)
+				printStringNow(u8'DRUGS: GO GO GO!', 3000)
+				end)
+			end
+		end
+		if armortimer.v then
+			local armourlvl = sampGetPlayerArmor(id)
+			if text:find('надел бронежилет') and armourlvl == 100 then
+				lua_thread.create(function()
+					printStringNow(u8'ARM: Timer started.', 5000)
+					wait(20000)
+					printStringNow(u8'ARM: 40 sec.', 5000)
+					wait(20000)
+					printStringNow(u8'ARM: 20 sec.', 5000)
+					wait(15000)
+					printStringNow(u8'ARM: 5 sec.', 3000)
+					wait(5000)
+					printStringNow(u8'ARM: GO GO GO!', 3000)
+				end)
+			end
+		end
+		if bus.v then
+			if text:find('^Премия за посадку пассажиров:') then
+	        local premia = text:match('(%d+)')
+	        salary = salary + premia
+	    elseif text:find('Вам добавлено: предмет "Ларец водителя автобуса". Чтобы открыть инвентарь,') then
+	        cases = cases + 1
+	    elseif text:find('Вам добавлено: предмет "Кусок чертежа". Чтобы открыть инвентарь,') then
+	        chert = chert + 1
+	    elseif text:find('Автобус по маршруту') then
+	        stop = stop + 1
+	    end
+	  end
+end
+
+function eatchips()
+		lua_thread.create(function()
+			if eat.v and edelay.v > 0 then
+				local eatdelay = cfg.settings.edelay * 60000 send('/eat') wait(eatdelay) return true
+			end
+		end)
 end
 -- imgui
 local volume = imgui.ImInt(5)
@@ -705,7 +918,7 @@ function imgui.OnDrawFrame()
     if window.v then
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
-        imgui.Begin('OS Helper | '..thisScript().version, window, imgui.WindowFlags.NoResize)
+        imgui.Begin('OS Helper v'..thisScript().version, window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
 				if imgui.Selectable(fa.ICON_FA_USER..u8' Персонаж', menu == 1) then menu = 1
 				elseif imgui.Selectable(fa.ICON_FA_CAR..u8' Транспорт', menu == 2) then menu = 2
@@ -713,7 +926,7 @@ function imgui.OnDrawFrame()
 				elseif imgui.Selectable(fa.ICON_FA_GLOBE..u8' Окружение', menu == 8) then menu = 8
 				elseif imgui.Selectable(fa.ICON_FA_COMMENTS..u8' Работа с чатом', menu == 4) then menu = 4
 				elseif imgui.Selectable(fa.ICON_FA_WINDOW_MAXIMIZE..u8' Работа с диалогами', menu == 5) then menu = 5
-				elseif imgui.Selectable(fa.ICON_FA_VOLUME_UP..u8' OS Music', menu == 9) then menu = 9
+				elseif imgui.Selectable(fa.ICON_FA_TASKS..u8' Дополнения', menu == 9) then menu = 9
 				elseif imgui.Selectable(fa.ICON_FA_COG..u8' Настройки', menu == 6) then menu = 6
 				elseif imgui.Selectable(fa.ICON_FA_INFO_CIRCLE..u8' Информация', menu == 7) then menu = 7
 				end
@@ -736,41 +949,10 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.BeginChild('right', imgui.ImVec2(325, 290), true)
 			if menu == 1 then
-				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Персонаж')
-        		imgui.PopFont()
-        		imgui.Separator()
-        		if imgui.Checkbox(u8'Бронежилет', armor) then cfg.settings.armor = armor.v end
-				imgui.TextQuestion(u8'Использовать бронежилет: ALT + 1')
-				if imgui.Checkbox(u8'Маска', mask) then cfg.settings.mask = mask.v end
-				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
-				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
-				imgui.TextQuestion(u8'Использовать нарко: ALT + 3')
-				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
-				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
-				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
-				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5.')
+				character()
 			end
 			if menu == 2 then
-				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'Транспорт')
-        		imgui.PopFont()
-        		imgui.Separator()
-				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
-				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
-				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
-				imgui.TextQuestion(u8'Активация: L')
-				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
-				imgui.TextQuestion(u8'Использовать ремкомплект: R')
-				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
-				imgui.TextQuestion(u8'Использовать канистру: B')
-				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
-				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
-				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
-				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
-				if imgui.Checkbox(u8'Автосбор шара', balloon) then cfg.settings.balloon = balloon.v end
-				imgui.TextQuestion(u8'Использование: ALT + C (зажатие)\nКликер для сборки шара')
-
+				transport()
 			end
 			if menu == 3 then
 				imgui.PushFont(fontsize)
@@ -808,7 +990,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Автологин в банке', cardlogin) then cfg.settings.cardlogin = cardlogin.v end
 				imgui.TextQuestion(u8'Не работает с новыми диалогами')
 				if cardlogin.v then 
-				imgui.Text(u8'Пин-код:')
+				imgui.Text(u8'	Пин-код:')
 				imgui.SameLine()
 				imgui.PushItemWidth(54.5) 
 				if imgui.InputInt(u8'##логин банк', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
@@ -845,6 +1027,7 @@ function imgui.OnDrawFrame()
 					else cfg.settings.theme = 3 themeSettings(1) color = '{ff4747}'
 					end
 				end
+				if imgui.Checkbox(u8'Приветственное сообщение', hello) then cfg.settings.hello = hello.v end
 				imgui.SetCursorPosX(89)
 				--[[if imgui.Button(u8'RELOAD', imgui.ImVec2(150, 20)) then
 					showCursor(false, false)
@@ -870,7 +1053,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Редактор времени и погоды', timeweather) then cfg.settings.timeweather = timeweather.v end
 				if timeweather.v then
 					imgui.PushItemWidth(75)
-					imgui.Text(u8'Время: ')
+					imgui.Text(u8'	Время: ')
 					imgui.SameLine()
 					imgui.SetCursorPosX(62)
 					if imgui.InputInt(u8'##time', time) then
@@ -883,7 +1066,7 @@ function imgui.OnDrawFrame()
 						end
 						cfg.settings.time = time.v
 					end
-					imgui.Text(u8'Погода: ')
+					imgui.Text(u8'	Погода: ')
 					imgui.SameLine()
 					if imgui.InputInt(u8'##weather', weather) then
 						if weather.v < 0 then
@@ -894,14 +1077,21 @@ function imgui.OnDrawFrame()
 						cfg.settings.weather = weather.v 
 					end
 				end
+				if imgui.Checkbox(u8'Настройка FOV', fisheye) then cfg.settings.fisheye = fisheye.v end
+				if fisheye.v then
+					imgui.Text(u8'	FOV:') imgui.SameLine()
+					if imgui.SliderInt('##FOV', fov, 1, 100) then cfg.settings.fov = fov.v end
+				end
 			end
 			if menu == 9 then
 				imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'OS Music - музыкальный плеер')
+        			imgui.CenterText(u8'Дополнения')
         		imgui.PopFont()
 				imgui.Separator()
 				if imgui.Checkbox(u8'OS Music', osplayer) then cfg.settings.osplayer = osplayer.v end
-				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Player.')
+				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Music.')
+				if imgui.Checkbox(u8'Bus Helper', bus) then cfg.settings.bus = bus.v end
+				imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка для работы Водитель Автобуса')
 			end
 			imgui.EndChild()
         imgui.End()
@@ -909,7 +1099,7 @@ function imgui.OnDrawFrame()
     if prmwindow.v then
     	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
-    	imgui.Begin('OS Helper | '..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
+    	imgui.Begin('OS Helper v'..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
     		imgui.PushFont(fontsize)
         			imgui.CenterText(u8'PR Manager | Menu')
         			imgui.CenterText(u8'Активация /pr')
@@ -976,7 +1166,130 @@ function imgui.OnDrawFrame()
         imgui.End()
     end
     if musicmenu.v then 
-	    local musiclist = getMusicList()
+	    osmusic()
+		end
+		if bushelper.v then
+        local resX, resY = getScreenResolution()
+        local SizeX, SizeY = 200.0, 125.0
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(SizeX, SizeY), imgui.Cond.FirstUseEver)
+        imgui.Begin('OS Helper '..thisScript().version, bushelper, imgui.WindowFlags.NoResize)
+            imgui.Text(u8'Денежный заработок: '..salary..u8' руб.')
+            imgui.Text(u8'Количество остановок: '..stop..u8' ост.')
+            imgui.Text(u8'Выпало ларцов: '..cases..u8' лар.')
+            imgui.Text(u8'Выпало чертежей: '..chert..u8' черт.')
+            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
+            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(185, 20)) then
+                imgui.ShowCursor = false
+            end
+        imgui.End()
+    end
+end
+
+function character()
+	imgui.PushFont(fontsize)
+        	imgui.CenterText(u8'Персонаж')
+        imgui.PopFont()
+        imgui.Separator()
+        if imgui.Checkbox(u8'Бронежилет', armor) then cfg.settings.armor = armor.v end
+				imgui.TextQuestion(u8'Использовать бронежилет: ALT + 1\nНастройка таймера доступна после включения главной функции')
+				if armor.v then imgui.Text('	') imgui.SameLine()  if imgui.Checkbox(u8'Армортаймер', armortimer) then cfg.settings.armortimer = armortimer.v end end
+				if imgui.Checkbox(u8'Маска', mask) then cfg.settings.mask = mask.v end
+				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
+				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
+				imgui.TextQuestion(u8'Использовать нарко: ALT + 3\nНастройка таймера и антиломки доступна после включения главной функции')
+				if drugs.v then imgui.Text('	') imgui.SameLine()  if imgui.Checkbox(u8'Наркотаймер', drugstimer) then cfg.settings.drugstimer = drugstimer.v end end
+				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
+				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
+				if med.v then
+					imgui.Text('	') imgui.SameLine()
+					if imgui.Checkbox(u8'Автохилл', automed) then cfg.settings.automed = automed.v end
+					if automed.v then
+						imgui.Text('		HP:') imgui.SameLine() 
+						imgui.PushItemWidth(73) 
+						if imgui.InputInt("##автохилл", hpmed) then 
+							if hpmed.v > 99 then
+								hpmed.v = 99
+							elseif hpmed.v < 1 then
+								hpmed.v = 1
+							end
+							cfg.settings.hpmed = hpmed.v 
+							save() 
+						end
+						imgui.PopItemWidth()
+					end
+				end
+				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
+				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5\nНастройка автоеды доступна после включения главной функции')
+				if eat.v then
+					imgui.Text(u8'	Задержка:')
+					imgui.SameLine()
+					imgui.PushItemWidth(75)
+					if imgui.InputInt("##edelay", edelay) then cfg.settings.edelay = edelay.v save() 
+						if edelay.v > 0 then eatchips() end
+					end
+					imgui.SameLine()
+					imgui.Text(u8'мин.')
+					imgui.TextQuestion(u8'При вводе 0 в поле, функция будет выключена')
+					imgui.PopItemWidth() 
+				end
+				if imgui.Checkbox(u8'Двойной прыжок', jump) then cfg.settings.jump = jump.v end
+				imgui.TextQuestion(u8'Активация: /jump')
+				if jump.v then
+					imgui.Text(u8'	Кнопка прыжка:')
+					imgui.SameLine()
+					imgui.PushItemWidth(75)
+					if imgui.Combo(u8'##кнопка прыжка', buttonjump, {u8'Пробел', u8'Shift'}, -1) then cfg.settings. buttonjump =  buttonjump.v save() imgui.PopItemWidth() end
+				end
+				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
+				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге.')
+				if imgui.Checkbox(u8'Крафт оружия', gunmaker) then cfg.settings.gunmaker = gunmaker.v end
+				imgui.TextQuestion(u8'Скрафтить оружие: /cg')
+				if gunmaker.v then
+					imgui.Text(u8'	Оружие: ')
+					imgui.SameLine()
+					imgui.PushItemWidth(75)
+					if imgui.Combo(u8'##Выбор гана', gunmode, {u8'Deagle', u8'M4', u8'Shotgun'}, -1) then cfg.settings.gunmode = gunmode.v save() imgui.PopItemWidth() end
+					imgui.Text(u8'	Патроны:')
+					imgui.SameLine()
+					imgui.PushItemWidth(75)
+					if imgui.InputInt("##Патроны", bullet, 0, 0) then cfg.settings.bullet = bullet.v save() end
+					if gunmode.v == 0 then
+						ammo = bullet.v * 2
+					elseif gunmode.v == 1 then
+						ammo = bullet.v * 2
+					elseif gunmode.v == 2 then
+						ammo = bullet.v * 10
+					end
+					imgui.Text(u8'	Стоимость крафта: '..ammo..u8' мат.')
+					end
+end
+
+function transport()
+					imgui.PushFont(fontsize)
+        			imgui.CenterText(u8'Транспорт')
+        		imgui.PopFont()
+        		imgui.Separator()
+				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
+				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
+				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
+				imgui.TextQuestion(u8'Активация: L')
+				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
+				imgui.TextQuestion(u8'Использовать ремкомплект: R')
+				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
+				imgui.TextQuestion(u8'Использовать канистру: B')
+				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
+				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
+				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
+				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
+				if imgui.Checkbox(u8'Автосбор шара', balloon) then cfg.settings.balloon = balloon.v end
+				imgui.TextQuestion(u8'Использование: ALT + C (зажатие)\nКликер для сборки шара')
+				if imgui.Checkbox(u8'Дрифт', drift) then cfg.settings.drift = drift.v end
+				imgui.TextQuestion(u8'Активация: LSHIFT (зажатие)\nУправление заносом')
+end
+
+function osmusic()
+			local musiclist = getMusicList()
 			local sw, sh = getScreenResolution()
 			imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 			imgui.SetNextWindowSize(imgui.ImVec2(320, 400), imgui.Cond.FirstUseEver)
@@ -997,7 +1310,7 @@ function imgui.OnDrawFrame()
 								if status then
 									if imgui.Button(fa.ICON_FA_PLAY..'') then
 										if playsound ~= nil then setAudioStreamState(playsound, as_action.STOP) playsound = nil end
-										playsound = loadAudioStream('moonloader/OS Helper/OS Player/'..name)
+										playsound = loadAudioStream('moonloader/OS Helper/OS Music/'..name)
 										setAudioStreamState(playsound, as_action.PLAY)
 										pause = false
 										status = false
@@ -1033,9 +1346,7 @@ function imgui.OnDrawFrame()
 					if playsound ~= nil then setAudioStreamVolume(playsound, math.floor(volume.v)) end
 				imgui.EndChild()
 			imgui.End()
-	end
 end
-
 -- theme
 function themeSettings(theme)
  imgui.SwitchContext()
@@ -1199,4 +1510,15 @@ function themeSettings(theme)
 	    colors[clr.ModalWindowDarkening]   = ImVec4(0.17, 0.17, 0.17, 0.48)
 	end
 end
+
+
 themeSettings()
+
+-- raknet
+function set_player_skin(id, skin)
+	local BS = raknetNewBitStream()
+	raknetBitStreamWriteInt32(BS, id)
+	raknetBitStreamWriteInt32(BS, skin)
+	raknetEmulRpcReceiveBitStream(153, BS)
+	raknetDeleteBitStream(BS)
+end
