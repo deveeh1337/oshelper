@@ -475,7 +475,7 @@ function main()
 		sampRegisterChatCommand('jump', function() 
 			lua_thread.create(function()
 			if jump.v then
-				send('OS Helper - лучший хелпер для родины рп.')
+				send('OS Helper - лучший хелпер для Rodina RP.')
 				wait(50)
 				if buttonjump.v == 0 then
 					setVirtualKeyDown(32, true)
@@ -1091,7 +1091,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'OS Music', osplayer) then cfg.settings.osplayer = osplayer.v end
 				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Music.')
 				if imgui.Checkbox(u8'Bus Helper', bus) then cfg.settings.bus = bus.v end
-				imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка для работы Водитель Автобуса')
+				imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка на работе автобусника')
 			end
 			imgui.EndChild()
         imgui.End()
@@ -1240,6 +1240,7 @@ function character()
 					imgui.SameLine()
 					imgui.PushItemWidth(75)
 					if imgui.Combo(u8'##кнопка прыжка', buttonjump, {u8'Пробел', u8'Shift'}, -1) then cfg.settings. buttonjump =  buttonjump.v save() imgui.PopItemWidth() end
+					imgui.TextQuestion(u8'Выберите кнопку, которая у вас указана в настройках GTA')
 				end
 				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
 				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге.')
