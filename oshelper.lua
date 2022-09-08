@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.0 beta')
+script_version('1.1 beta')
 script_author('deveeh')
 
 -- libraries
@@ -441,6 +441,7 @@ function main()
 				msg('У вас включена активация через чит-код ('..cfg.settings.cheatcode..')') 
 			end 
 		end)
+		sampRegisterChatCommand("ss", function() send('/setspawn') end)
 		sampRegisterChatCommand("bus", function()
 			if bus.v then 
 				bushelper.v = not bushelper.v
@@ -985,7 +986,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Сокращенные команды', cmds) then cfg.settings.cmds = cmds.v save() end
 				if imgui.IsItemHovered() then
                     imgui.BeginTooltip()
-                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo')
+                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo\n/ss - /setspawn')
                     imgui.EndTooltip()
                 end
 			end
