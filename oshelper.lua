@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.1 beta')
+script_version('1.0 beta')
 script_author('deveeh')
 
 -- libraries
@@ -120,6 +120,7 @@ local cfg = inicfg.load({
 		automed = false,
 		hpmed = 20,
 		prstring = false,
+		antilomka = false,
 		vr2 = false,
 		fam = false,
 		al = false,
@@ -182,6 +183,7 @@ local vrmsg1 = imgui.ImBuffer(''..cfg.settings.vrmsg1, 256)
 local vrmsg2 = imgui.ImBuffer(256)
 local vr1 = imgui.ImBool(cfg.settings.vr1)
 local gunmaker = imgui.ImBool(cfg.settings.gunmaker)
+local antilomka = imgui.ImBool(cfg.settings.antilomka)
 local vskin = imgui.ImBool(cfg.settings.vskin)
 local armortimer = imgui.ImBool(cfg.settings.armortimer)
 local drugstimer = imgui.ImBool(cfg.settings.drugstimer)
@@ -439,6 +441,7 @@ function main()
 				msg('У вас включена активация через чит-код ('..cfg.settings.cheatcode..')') 
 			end 
 		end)
+		sampRegisterChatCommand("ss", function() send('/setspawn') end)
 		sampRegisterChatCommand("bus", function()
 			if bus.v then 
 				bushelper.v = not bushelper.v
@@ -854,7 +857,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 end
 function sampev.onServerMessage(color, text)
 		if drugstimer.v then
-			if text:find('Здоровье пополнено на') then
+			if text:find('Здоровье пополнено на') and not text:find('говорит:') then
 				lua_thread.create(function() 
 				printStringNow(u8'DRUGS: Timer started.', 5000)
 				wait(20000)
@@ -870,7 +873,7 @@ function sampev.onServerMessage(color, text)
 		end
 		if armortimer.v then
 			local armourlvl = sampGetPlayerArmor(id)
-			if text:find('надел бронежилет') and armourlvl == 100 then
+			if text:find('надел бронежилет') and armourlvl == 100 and not text:find('говорит:') then
 				lua_thread.create(function()
 					printStringNow(u8'ARM: Timer started.', 5000)
 					wait(20000)
@@ -885,7 +888,7 @@ function sampev.onServerMessage(color, text)
 			end
 		end
 		if bus.v then
-			if text:find('^Премия за посадку пассажиров:') then
+			if text:find('^Премия за посадку пассажиров:') and not text:find('говорит:') then
 	        local premia = text:match('(%d+)')
 	        salary = salary + premia
 	    elseif text:find('Вам добавлено: предмет "Ларец водителя автобуса". Чтобы открыть инвентарь,') then
@@ -896,6 +899,11 @@ function sampev.onServerMessage(color, text)
 	        stop = stop + 1
 	    end
 	  end
+	  if antilomka.v then
+			if text:find('У вас началась ломка') and not text:find('говорит:') then
+				send('/usedrugs 1')
+			end
+		end
 end
 
 function eatchips()
@@ -978,7 +986,7 @@ function imgui.OnDrawFrame()
 				if imgui.Checkbox(u8'Сокращенные команды', cmds) then cfg.settings.cmds = cmds.v save() end
 				if imgui.IsItemHovered() then
                     imgui.BeginTooltip()
-                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo')
+                        imgui.Text(u8'/biz - /bizinfo\n/car [id] - /fixmycar\n/fh [id] - /findihouse\n/fbiz [id] - /findibiz\n/urc - /unrentcar\n/fin [id] [id biz] - /showbizinfo\n/ss - /setspawn')
                     imgui.EndTooltip()
                 end
 			end
@@ -1198,7 +1206,12 @@ function character()
 				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
 				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
 				imgui.TextQuestion(u8'Использовать нарко: ALT + 3\nНастройка таймера и антиломки доступна после включения главной функции')
-				if drugs.v then imgui.Text('	') imgui.SameLine()  if imgui.Checkbox(u8'Наркотаймер', drugstimer) then cfg.settings.drugstimer = drugstimer.v end end
+				if drugs.v then 
+					imgui.Text('	') imgui.SameLine()  
+					if imgui.Checkbox(u8'Наркотаймер', drugstimer) then cfg.settings.drugstimer = drugstimer.v end
+					imgui.Text('	') imgui.SameLine() 
+					if imgui.Checkbox(u8'Антиломка', antilomka) then cfg.settings.antilomka = antilomka.v end  
+				end
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
 				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
 				if med.v then
