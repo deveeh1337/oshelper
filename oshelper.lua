@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.1 beta')
+script_version('1.1.1 beta')
 script_author('deveeh')
 
 -- libraries
@@ -474,33 +474,6 @@ function main()
 		end)
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
-		end)
-		sampRegisterChatCommand('jump', function() 
-			lua_thread.create(function()
-			if jump.v then
-				send('OS Helper - лучший хелпер для Rodina RP.')
-				wait(50)
-				if buttonjump.v == 0 then
-					setVirtualKeyDown(32, true)
-					wait(50) 
-					setVirtualKeyDown(32, false)
-					wait(100) 
-					setVirtualKeyDown(32, true)
-					wait(50) 
-					setVirtualKeyDown(32, false)
-				else
-					setVirtualKeyDown(160, true)
-					wait(50) 
-					setVirtualKeyDown(160, false)
-					wait(100) 
-					setVirtualKeyDown(160, true)
-					wait(50) 
-					setVirtualKeyDown(160, false)
-				end
-			else
-				msg('У вас выключена функция Двойного Прыжка.')
-			end
-			end)
 		end)
     local ip, port = sampGetCurrentServerAddress()
 	if ip == '185.169.134.163' and port == 7777 then serverName = 'Rodina RP | Central District'
@@ -1245,15 +1218,6 @@ function character()
 					imgui.Text(u8'мин.')
 					imgui.TextQuestion(u8'При вводе 0 в поле, функция будет выключена')
 					imgui.PopItemWidth() 
-				end
-				if imgui.Checkbox(u8'Двойной прыжок', jump) then cfg.settings.jump = jump.v end
-				imgui.TextQuestion(u8'Активация: /jump')
-				if jump.v then
-					imgui.Text(u8'	Кнопка прыжка:')
-					imgui.SameLine()
-					imgui.PushItemWidth(75)
-					if imgui.Combo(u8'##кнопка прыжка', buttonjump, {u8'Пробел', u8'Shift'}, -1) then cfg.settings. buttonjump =  buttonjump.v save() imgui.PopItemWidth() end
-					imgui.TextQuestion(u8'Выберите кнопку, которая у вас указана в настройках GTA')
 				end
 				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
 				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге.')
