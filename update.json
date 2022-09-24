@@ -1,4 +1,5 @@
 {
   "latest": "1.1.1 beta",
   "osupdate": "https://raw.githubusercontent.com/deveeh/oshelper/master/oshelper.lua"
+  "antiafk": ""
 }
