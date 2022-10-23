@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.1.1 beta')
+script_version('1.1.2 beta')
 script_author('deveeh')
 
 -- libraries
@@ -1186,8 +1186,8 @@ function character()
 					if imgui.Checkbox(u8'Антиломка', antilomka) then cfg.settings.antilomka = antilomka.v end  
 				end
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
-				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
-				if med.v then
+				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
+				--[[if med.v then
 					imgui.Text('	') imgui.SameLine()
 					if imgui.Checkbox(u8'Автохилл', automed) then cfg.settings.automed = automed.v end
 					if automed.v then
@@ -1204,7 +1204,7 @@ function character()
 						end
 						imgui.PopItemWidth()
 					end
-				end
+				end]]--
 				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
 				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5\nНастройка автоеды доступна после включения главной функции')
 				if eat.v then
