@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.1.2 beta')
+script_version('1.2 beta')
 script_author('deveeh')
 
 -- libraries
@@ -11,6 +11,8 @@ local encoding = require 'encoding'
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 local fa = require 'fAwesome5'
+local vk = require "vkeys"
+local wm = require "windows.message"
 local fa_glyph_ranges = imgui.ImGlyphRanges({ fa.min_range, fa.max_range })
 local inicfg = require 'inicfg'
 local sampev = require 'lib.samp.events'
@@ -21,13 +23,22 @@ ffi.cdef[[
 	short GetKeyState(int nVirtKey);
 	bool GetKeyboardLayoutNameA(char* pwszKLID);
 	int GetLocaleInfoA(int Locale, int LCType, char* lpLCData, int cchData);
+	typedef unsigned long DWORD;
+	DWORD GetTickCount();
 ]]
-local number = 1
+local resX, resY = getScreenResolution()
+local numbermus = 1
 local antiafkmode = imgui.ImBool(false)
 local radiobutton = imgui.ImInt(0)
 local BuffSize = 32
 local KeyboardLayoutName = ffi.new("char[?]", BuffSize)
 local LocalInfo = ffi.new("char[?]", BuffSize)
+
+limit = 15 				 	-- Кол-во строк лога
+col_default = 0xFFAAAAAA 	-- обычный цвет
+col_pressed = 0xFFFFFF 	-- цвет нажатия
+font_name = "Calibri"		-- Шрифт
+font_size = 13				-- Размер
 
 function autoupdate(json_url, prefix, url)
   local dlstatus = require('moonloader').download_status
@@ -104,6 +115,8 @@ local cfg = inicfg.load({
 		med = false,
 		autoeat = false,
 		bus = false,
+		mine = false,
+		farm = false,
 		drugs = false,
 		rem = false,
 		fill = false,
@@ -144,15 +157,33 @@ local cfg = inicfg.load({
 		osplayer = false,
 		gunmaker = false,
 		armortimer = false,
+		job = false,
 		drugstimer = false,
 		vskin = false,
-		jump = false,
+		fish = false,
+		infrun = false,
+		prsh1 = 0,
+		prsh2 = 0,
+		prsh3 = 56,
+		prsh4 = 1,
+		keyboard = false,
+		autoscreen = false,
+		prsh5 = 0,
 		buttonjump = 0,
 		delay = 30,
 		edelay = 0,
 		fisheye = false,
 		logincard = 123456,
 		fov = 101,
+	},
+	keyboard = {
+		kbact = false,
+		posx = 10,
+		posy = 500,
+		move = true,
+	},
+	keylogger = {
+		active = true,
 	}
 }, "OSHelper")
 
@@ -164,13 +195,20 @@ local cwindow = imgui.ImBool(false)
 local bushelper = imgui.ImBool(false)
 local minehelper = imgui.ImBool(false)
 local farmhelper = imgui.ImBool(false)
+local fishhelper = imgui.ImBool(false)
+local kbset = imgui.ImBool(false)
+local keyboard = imgui.ImBool(cfg.settings.keyboard)
+local kbact = imgui.ImBool(cfg.keyboard.kbact)
+local keyboard_pos = imgui.ImVec2(cfg.keyboard.posx, cfg.keyboard.posy)
+local job = imgui.ImBool(cfg.settings.job)
+local bus = imgui.ImBool(cfg.settings.bus)
+local mine = imgui.ImBool(cfg.settings.mine)
+local farm = imgui.ImBool(cfg.settings.farm)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local capcha = imgui.ImBool(false)
 local eat = imgui.ImBool(cfg.settings.eat)
-local jump = imgui.ImBool(cfg.settings.jump)
 local drift = imgui.ImBool(cfg.settings.drift)
-local bus = imgui.ImBool(cfg.settings.bus)
 local active = imgui.ImInt(cfg.settings.active)
 local edelay = imgui.ImInt(cfg.settings.edelay)
 local gunmode = imgui.ImInt(cfg.settings.gunmode)
@@ -212,14 +250,21 @@ local balloon = imgui.ImBool(cfg.settings.balloon)
 local fill = imgui.ImBool(cfg.settings.fill)
 local fov = imgui.ImInt(cfg.settings.fov)
 local mask = imgui.ImBool(cfg.settings.mask)
+local move = imgui.ImBool(cfg.keyboard.move)
 local fmenu = imgui.ImBool(cfg.settings.fmenu)
 local finv = imgui.ImBool(cfg.settings.finv)
 local lock = imgui.ImBool(cfg.settings.lock)
 local autolock = imgui.ImBool(cfg.settings.autolock)
 local cardlogin = imgui.ImBool(cfg.settings.cardlogin)
+local fish = imgui.ImBool(cfg.settings.fish)
 local spawn = imgui.ImBool(cfg.settings.spawn)
 local logincard = imgui.ImInt(cfg.settings.logincard)
 local hpmed = imgui.ImInt(cfg.settings.hpmed)
+local prsh1 = imgui.ImInt(cfg.settings.prsh1)
+local prsh2 = imgui.ImInt(cfg.settings.prsh2)
+local prsh3 = imgui.ImInt(cfg.settings.prsh3)
+local prsh4 = imgui.ImInt(cfg.settings.prsh4)
+local prsh5 = imgui.ImInt(cfg.settings.prsh5)
 local setskin = 0
 local autoeat = imgui.ImBool(cfg.settings.autoeat)
 local automed = imgui.ImBool(cfg.settings.automed)
@@ -229,14 +274,148 @@ local prmanager = imgui.ImBool(cfg.settings.prmanager)
 local timeweather = imgui.ImBool(cfg.settings.timeweather)
 local chathelper = imgui.ImBool(cfg.settings.chathelper)
 local podarok = imgui.ImBool(cfg.settings.podarok)
+local autoscreen = imgui.ImBool(cfg.settings.autoscreen)
 local osplayer = imgui.ImBool(cfg.settings.osplayer)
+local infrun = imgui.ImBool(cfg.settings.infrun)
 local pronoroff = false
 local menu = 1
-local salary = 0
-local stop = 0
-local cases = 0
-local chert = 0
+local bhsalary = 0
+local bhstop = 0
+local bhcases = 0
+local bhchert = 0
+local mhstone = 0
+local mhmetall = 0
+local mhbronze = 0
+local mhsilver = 0
+local mhgold = 0
+local fhlyon = 0
+local fhhlopok = 0
+local fishsalary = 0
+local fishcase = 0
+local nowTime = os.date("%H:%M:%S", os.time())
+local flymode = 0  
+local speed = 0.5
+local radarHud = 0
+local timech = 0
+local keyPressed = 0
 
+keyboards = {
+	{ -- Без NumPad
+		{
+			{'Esc', 0x1B},
+			{'F1', 0x70},
+			{'F2', 0x71},
+			{'F3', 0x72},
+			{'F4', 0x73},
+			{'F5', 0x74},
+			{'F6', 0x75},
+			{'F7', 0x76},
+			{'F8', 0x77},
+			{'F9', 0x78},
+			{'F10', 0x79},
+			{'F11', 0x7A},
+			{'F12', 0x7B},
+		},
+		{
+			{'`', 0xC0},
+			{'1', 0x31},
+			{'2', 0x32},
+			{'3', 0x33},
+			{'4', 0x34},
+			{'5', 0x35},
+			{'6', 0x36},
+			{'7', 0x37},
+			{'8', 0x38},
+			{'9', 0x39},
+			{'0', 0x30},
+			{'-', 0xBD},
+			{'+', 0xBB},
+			{'<-', 0x08},
+			{'Ins', 0x2D},
+			{'Home', 0x24},
+			{'PU', 0x21},
+		},
+		{
+			{'Tab', 0x09},
+			{'Q', 0x51},
+			{'W', 0x57},
+			{'E', 0x45},
+			{'R', 0x52},
+			{'T', 0x54},
+			{'Y', 0x59},
+			{'U', 0x55},
+			{'I', 0x49},
+			{'O', 0x4F},
+			{'P', 0x50},
+			{'[', 0xDB},
+			{']', 0xDD},
+			{'\\', 0xDC},
+			{'Del', 0x2E},
+			{'End', 0x23},
+			{'PD', 0x22},
+		},
+		{
+			{'Caps ', 0x14},
+			{'A', 0x41},
+			{'S', 0x53},
+			{'D', 0x44},
+			{'F', 0x46},
+			{'G', 0x47},
+			{'H', 0x48},
+			{'J', 0x4A},
+			{'K', 0x4B},
+			{'L', 0x4C},
+			{';', 0xBA},
+			{'\'', 0xDE},
+			{' Enter ', 0x0D},
+		},
+		{
+			{' LShift  ', 0xA0},
+			{'Z', 0x5A},
+			{'X', 0x58},
+			{'C', 0x43},
+			{'V', 0x56},
+			{'B', 0x42},
+			{'N', 0x4E},
+			{'M', 0x4D},
+			{',', 0xBC},
+			{'.', 0xBE},
+			{'/', 0xBF},
+			{' RShift  ', 0xA1, 33},
+			{'/\\', 0x26},
+		},
+		{
+			{'Ctrl', 0xA2},
+			{'Win', 0x5B},
+			{'Alt', 0xA4},
+			{'                              ', 0x20},
+			{'Alt', 0xA5},
+			{'Win', 0x5C},
+			{'Ctrl', 0xA3, 10},
+			{'<', 0x25},
+			{'\\/', 0x28},
+			{'>', 0x27},
+		}
+	},
+	{ -- Только цифры
+		{
+			{'1', 0x31},
+			{'2', 0x32},
+			{'3', 0x33},
+			{'4', 0x34},
+			{'5', 0x35},
+			{'6', 0x36},
+			{'7', 0x37},
+			{'8', 0x38},
+			{'9', 0x39},
+			{'0', 0x30},
+		},
+		{
+			{'N', 0x4E},
+			{' Enter ', 0x0D},
+		}
+	}
+}
 bike = {[481] = true, [509] = true, [510] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
 chars = {
@@ -367,17 +546,12 @@ end
 -- main
 function main()
     while not isSampAvailable() do wait(200) end
-    _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
-    if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') end
-    if not doesDirectoryExist('moonloader/OS Helper') then createDirectory('moonloader/OS Helper') end
-    if not doesDirectoryExist('moonloader/OS Helper/OS Music') then createDirectory('moonloader/OS Helper/OS Music') end
-    inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
     if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 		elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
 		elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
 		else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
 		end
-		if hello.v then
+    if hello.v then
 			if active.v == 0 then
 				msg('Авторы: '..color..'deveeh'..textcolor..' и '..color..'casparo'..textcolor..'. Команда активации: '..color..'/oshelper') 
 			end
@@ -385,6 +559,11 @@ function main()
 				msg('Авторы: '..color..'deveeh'..textcolor..' и '..color..'casparo'..textcolor..'. Чит-код: '..color..cfg.settings.cheatcode) 
 			end
 		end
+    _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') msg('Конфигурационный файл OSHelper.ini принудительно загружен') end
+    if not doesDirectoryExist('moonloader/OS Helper') then createDirectory('moonloader/OS Helper') end
+    if not doesDirectoryExist('moonloader/OS Helper/OS Music') then createDirectory('moonloader/OS Helper/OS Music') end
+    inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
 	lua_thread.create(inputChat)
 	lua_thread.create(showInputHelp)
     imgui.Process = false
@@ -443,10 +622,47 @@ function main()
 		end)
 		sampRegisterChatCommand("ss", function() send('/setspawn') end)
 		sampRegisterChatCommand("bus", function()
-			if bus.v then 
-				bushelper.v = not bushelper.v
+			if job.v then
+				if bus.v then 
+					bushelper.v = not bushelper.v
+				else
+					msg('У вас не включена функция Bus Helper.')  
+				end
 			else
-				msg('У вас не включена функция Bus Helper.')  
+				msg('У вас не включена функция Job Helper.')  
+			end
+		end)
+		sampRegisterChatCommand("fish", function()
+			if job.v then
+				if fish.v then 
+					fishhelper.v = not fishhelper.v
+				else
+					msg('У вас не включена функция Fish Helper.')  
+				end
+			else
+				msg('У вас не включена функция Job Helper.')  
+			end
+		end)
+		sampRegisterChatCommand("mine", function()
+			if job.v then
+				if mine.v then 
+					minehelper.v = not minehelper.v
+				else
+					msg('У вас не включена функция Mine Helper.')  
+				end
+			else
+				msg('У вас не включена функция Job Helper.')  
+			end
+		end)
+		sampRegisterChatCommand("farm", function()
+			if job.v then
+				if farm.v then 
+					farmhelper.v = not farmhelper.v
+				else
+					msg('У вас не включена функция Farm Helper.')  
+				end
+			else
+				msg('У вас не включена функция Job Helper.')  
 			end 
 		end)
 		sampRegisterChatCommand('cg', function() 
@@ -454,7 +670,7 @@ function main()
 				if gunmode.v == 0 then
 					send('/sellgun '..id..' deagle '..cfg.settings.bullet)
 				elseif gunmode.v == 1 then
-					send('/sellgun '..id..' deagle '..cfg.settings.bullet)
+					send('/sellgun '..id..' m4 '..cfg.settings.bullet)
 				elseif gunmode.v == 2 then
 					send('/sellgun '..id..' shotgun '..cfg.settings.bullet)
 				end
@@ -464,6 +680,10 @@ function main()
 		end)
 		sampRegisterChatCommand('prm', function() 
 			prmwindow.v = not prmwindow.v  
+		end)
+		sampRegisterChatCommand('nickname', function() 
+			sss = sampGetPlayerNickname(id)
+			msg(sss)
 		end)
 		sampRegisterChatCommand('osmusic', function()
 			if osplayer.v then 
@@ -475,6 +695,24 @@ function main()
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
 		end)
+		sampRegisterChatCommand('camhack', function()
+			if flymode == 0 then
+					--setPlayerControl(playerchar, false)
+					displayRadar(false)
+					displayHud(false)	    
+					local posX, posY, posZ = getCharCoordinates(playerPed)
+					angZ = getCharHeading(playerPed)
+					angZ = angZ * -1.0
+					setFixedCameraPosition(posX, posY, posZ, 0.0, 0.0, 0.0)
+					angY = 0.0
+					--freezeCharPosition(playerPed, false)
+					--setCharProofs(playerPed, 1, 1, 1, 1, 1)
+					--setCharCollision(playerPed, false)
+					lockPlayerControl(true)
+					flymode = 1
+					--	sampSendChat('/anim 35')
+				end
+		end)
     local ip, port = sampGetCurrentServerAddress()
 	if ip == '185.169.134.163' and port == 7777 then serverName = 'Rodina RP | Central District'
 	elseif ip == '185.169.134.60' and port == 7777 then serverName = 'Rodina RP | Southern District'
@@ -483,8 +721,10 @@ function main()
 	end
     while true do
         wait(0)
-        imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or bushelper.v or calcactive
-        if updateversion ~= thisScript().version then updates = true end
+        imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or bushelper.v or minehelper.v or farmhelper.v or fishhelper.v or calcactive or keyboard.v or kbset.v
+        imgui.ShowCursor = kbset.v
+        if not keyboard.v then kbact.v = false end if keyboard.v then kbact.v = true end
+        timech = timech + 1
         if fisheye.v then
 	        if isCurrentCharWeapon(PLAYER_PED, 34) and isKeyDown(2) then
 							cameraSetLerpFov(fov.v, fov.v, 1000, 1)
@@ -554,7 +794,7 @@ function main()
 						end
 					end
 				end
-
+				if infrun.v then mem.setint8(0xB7CEE4, 1) end
         
     -- hotkeys
         if not sampIsCursorActive() then
@@ -593,8 +833,8 @@ function main()
 	     	if drugs.v and isKeyDown(0x12) and wasKeyPressed(0x33) then send('/usedrugs 3') end
 	     	if rem.v and wasKeyPressed(0x52) then send('/repcar') end
 	     	if fill.v and wasKeyPressed(0x42) then send('/fillcar') end
-	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) send('/faminvite '..id) end
-	     	if fmenu.v and wasKeyPressed(0x4F) then send('/fammenu') end
+	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) local _, idinv = sampGetPlayerIdByCharHandle(ped) if _ then send('/faminvite '..idinv) end end
+	     	if fmenu.v and isKeyDown(0x12) and wasKeyPressed(0x46) then send('/fammenu') end
 	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
 		    if plusw.v then
 			    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
@@ -627,6 +867,8 @@ function translite(text)
 	return text
 end
 
+
+
 --[[function sampev.onServerMessage(color, text)
 	if clear_server.v then 
 		if text:find("~~~~~~~~~~~~~~~~~~~~~~~~~~") and not text:find('говорит') then
@@ -649,6 +891,15 @@ end
 		end
 	end
 end]]--
+
+function onScriptTerminate(s)
+	if s == thisScript() then
+		cfg.keyboard.kbset = keyboard.v
+		cfg.keyboard.posx, cfg.keyboard.posy = keyboard_pos.x, keyboard_pos.y
+		inicfg.save(cfg, 'OSHelper')
+	end
+end
+
 
 function showInputHelp()
 	while true do
@@ -716,11 +967,25 @@ function sampev.onSendEnterVehicle(id, pass)
 	    lua_thread.create(function()
 	        --while not isCharInAnyCar(PLAYER_PED) do wait(0) end
 	        if not isCharInAnyCar(PLAYER_PED) then
-	        wait(3000)
+	        wait(4000)
 	        sampSendChat('/engine')
 	        wait(1000)
 	        sampSendChat('/lock')
 	    end
+	    end)
+	end
+end
+
+function sampev.onSendExitVehicle(id)
+	idcar = 0
+	if autolock.v then
+	    lua_thread.create(function()
+	        if isCharInAnyCar(PLAYER_PED) then
+	        	wait(500)
+	        	sampSendChat('/engine') 
+	        else 
+	            sampAddChatMessage('not in car', -1) 
+	        end
 	    end)
 	end
 end
@@ -757,20 +1022,6 @@ function clearchat()
 	sampAddChatMessage('', -1)
 	sampAddChatMessage('', -1)
 	sampAddChatMessage('', -1)
-end
-
-function sampev.onSendExitVehicle(id)
-	idcar = 0
-	if autolock.v then
-	    lua_thread.create(function()
-	        if isCharInAnyCar(PLAYER_PED) then
-	        	wait(500)
-	        	sampSendChat('/engine') 
-	        else 
-	            sampAddChatMessage('not in car', -1) 
-	        end
-	    end)
-	end
 end
 
 function patch_samp_time_set(enable)
@@ -827,6 +1078,16 @@ end
 
 function sampev.onShowDialog(id, style, title, button1, button0, text)
 	if cardlogin.v then if id == 991 then sampSendDialogResponse(991, 1, -1, logincard.v) end end
+	if autoscreen.v then
+		if id == 10044 then 
+			lua_thread.create(function() 
+				wait(400)
+				sampSendChat('/time')
+				wait(600)
+				setVirtualKeyDown(119, true) wait(0) setVirtualKeyDown (119, false)
+		end) 
+		end
+	end
 end
 function sampev.onServerMessage(color, text)
 		if drugstimer.v then
@@ -846,6 +1107,7 @@ function sampev.onServerMessage(color, text)
 		end
 		if armortimer.v then
 			local armourlvl = sampGetPlayerArmor(id)
+			local nickname = sampGetPlayerNickname(id)
 			if text:find('надел бронежилет') and armourlvl == 100 and not text:find('говорит:') then
 				lua_thread.create(function()
 					printStringNow(u8'ARM: Timer started.', 5000)
@@ -860,24 +1122,77 @@ function sampev.onServerMessage(color, text)
 				end)
 			end
 		end
-		if bus.v then
-			if text:find('^Премия за посадку пассажиров:') and not text:find('говорит:') then
-	        local premia = text:match('(%d+)')
-	        salary = salary + premia
-	    elseif text:find('Вам добавлено: предмет "Ларец водителя автобуса". Чтобы открыть инвентарь,') then
-	        cases = cases + 1
-	    elseif text:find('Вам добавлено: предмет "Кусок чертежа". Чтобы открыть инвентарь,') then
-	        chert = chert + 1
-	    elseif text:find('Автобус по маршруту') then
-	        stop = stop + 1
-	    end
-	  end
 	  if antilomka.v then
 			if text:find('У вас началась ломка') and not text:find('говорит:') then
 				send('/usedrugs 1')
 			end
 		end
+		bushelpermsg()
+		minehelpermsg()
+		farmhelpermsg()
 end
+
+function sampev.onServerMessage(color, text) --jobhelper
+	if bus.v then
+			if text:find('^Премия за посадку пассажиров:') and not text:find('говорит:') then
+	        local premia = text:match('(%d+)')
+	        bhsalary = bhsalary + premia
+	    elseif text:find('Вам добавлено: предмет "Ларец водителя автобуса". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        bhcases = bhcases + 1
+	    elseif text:find('Вам добавлено: предмет "Кусок чертежа". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        bhchert = bhchert + 1
+	    elseif text:find('Автобус по маршруту') and not text:find('говорит:') then
+	        bhstop = bhstop + 1
+	    end
+	end
+	if mine.v then
+			if text:find('Вам добавлено: предмет "Камень". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhstone = mhstone + 1
+	    elseif text:find('Вам добавлено: предмет "Камень" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhstone = mhstone + tonumber(text:match("(%d+) шт"))  
+	    end
+	    if text:find('Вам добавлено: предмет "Металл". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhmetall = mhmetall + 1
+	    elseif text:find('Вам добавлено: предмет "Металл" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhmetall = mhmetall + tonumber(text:match("(%d+) шт"))  
+	    end
+	    if text:find('Вам добавлено: предмет "Бронза". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhmetall = mhbronze + 1
+	    elseif text:find('Вам добавлено: предмет "Бронза" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhbronze = mhbronze + tonumber(text:match("(%d+) шт"))  
+	    end
+	    if text:find('Вам добавлено: предмет "Серебро". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhmetall = mhsilver + 1
+	    elseif text:find('Вам добавлено: предмет "Серебро" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhmetall = mhsilver + tonumber(text:match("(%d+) шт"))  
+	    end
+	    if text:find('Вам добавлено: предмет "Золото". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhgold = mhgold + 1
+	    elseif text:find('Вам добавлено: предмет "Золото" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhgold = mhgold + tonumber(text:match("(%d+) шт"))  
+	    end
+	  end
+	  if farm.v then
+			if text:find('Вам добавлено: предмет "Лён". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhlyon = mhlyon + 1
+	    elseif text:find('Вам добавлено: предмет "Лён" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhlyon = mhlyon + tonumber(text:match("(%d+) шт"))  
+	    end
+	    if text:find('Вам добавлено: предмет "Хлопок". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        mhhlopok = mhlopok + 1
+	    elseif text:find('Вам добавлено: предмет "Хлопок" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		mhhlopok = mhlopok + tonumber(text:match("(%d+) шт"))  
+	  	end
+		end
+		if fish.v then
+			if text:find('Вам добавлено: предмет "Ларец рыболова". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        fishcase = fishcase + 1
+	    elseif text:find('Вам добавлено: предмет "Рыба %A". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		fishsalary = fishsalary + 1 
+	    end
+		end
+end
+
 
 function eatchips()
 		lua_thread.create(function()
@@ -889,15 +1204,13 @@ end
 -- imgui
 local volume = imgui.ImInt(5)
 function imgui.OnDrawFrame()
-	local resX, resY = getScreenResolution()
-	local sizeX, sizeY = 500.0, 325.0
 	if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 	elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
 	elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
 	else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
 	end
     if window.v then
-        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+    		imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 325), imgui.Cond.FirstUseEver)
         imgui.Begin('OS Helper v'..thisScript().version, window, imgui.WindowFlags.NoResize)
 	        imgui.BeginChild("left", imgui.ImVec2(150, 290), true)
@@ -941,7 +1254,7 @@ function imgui.OnDrawFrame()
         		imgui.PopFont()
 				imgui.Separator()
 				if imgui.Checkbox(u8'Меню семьи', fmenu) then cfg.settings.fmenu = fmenu.v end
-				imgui.TextQuestion(u8'Активация: O')
+				imgui.TextQuestion(u8'Активация: ALT + F')
 				if imgui.Checkbox(u8'Инвайт в семью', finv) then cfg.settings.finv = finv.v end
 				imgui.TextQuestion(u8'Активация: F + 1')
 			end
@@ -976,6 +1289,9 @@ function imgui.OnDrawFrame()
 				imgui.PushItemWidth(54.5) 
 				if imgui.InputInt(u8'##логин банк', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
 				end
+				if imgui.Checkbox(u8'Графическая клавиатура', keyboard) then cfg.settings.keyboard = keyboard.v end
+				if imgui.Checkbox(u8'Autoscreen', autoscreen) then cfg.settings.autoscreen = autoscreen.v end
+				imgui.TextQuestion(u8'При появлении диалога с предложением, \nавтоматически пишет /time и нажимает F8')
 				--[[if imgui.Checkbox(u8'Тренировка капчи', capcha) then cfg.settings.capcha = capcha.v end
 				if capcha.v then
 				if imgui.InputInt(u8'##активация клавиши', key, 0, 0) then cfg.settings.key = key.v end
@@ -1071,8 +1387,22 @@ function imgui.OnDrawFrame()
 				imgui.Separator()
 				if imgui.Checkbox(u8'OS Music', osplayer) then cfg.settings.osplayer = osplayer.v end
 				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Music.')
-				if imgui.Checkbox(u8'Bus Helper', bus) then cfg.settings.bus = bus.v end
-				imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка на работе автобусника')
+				if imgui.Checkbox(u8'Job Helper', job) then cfg.settings.job = job.v end
+				imgui.TextQuestion(u8'Лучший помощник для вашей любимой работы')
+				if job.v then
+					imgui.Text('	') imgui.SameLine()
+					if imgui.Checkbox(u8'Bus Helper', bus) then cfg.settings.bus = bus.v end
+					imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка на работе автобусника')
+					imgui.Text('	') imgui.SameLine()
+					if imgui.Checkbox(u8'Mine Helper', mine) then cfg.settings.mine = mine.v end
+					imgui.TextQuestion(u8'Активация: /mine\nПодсчёт заработка на работе шахтера')
+					imgui.Text('	') imgui.SameLine()
+					if imgui.Checkbox(u8'Farm Helper', farm) then cfg.settings.farm = farm.v end
+					imgui.TextQuestion(u8'Активация: /farm\nПодсчёт заработка на работе фермера')
+					imgui.Text('	') imgui.SameLine()
+					if imgui.Checkbox(u8'Fish Helper', fish) then cfg.settings.fish = fish.v end
+					imgui.TextQuestion(u8'Активация: /fish\nПодсчёт заработка на работе рыболова')
+				end
 			end
 			imgui.EndChild()
         imgui.End()
@@ -1080,12 +1410,7 @@ function imgui.OnDrawFrame()
     if prmwindow.v then
     	imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(300, 400), imgui.Cond.FirstUseEver)
-    	imgui.Begin('OS Helper v'..thisScript().version..'##prmenu', prmwindow, imgui.WindowFlags.NoResize)
-    		imgui.PushFont(fontsize)
-        			imgui.CenterText(u8'PR Manager | Menu')
-        			imgui.CenterText(u8'Активация /pr')
-        	imgui.PopFont()
-        	imgui.Separator()
+    	imgui.Begin('PR Manager (OS '..thisScript().version..')##prmenu', prmwindow, imgui.WindowFlags.NoResize)
         	if prmanager.v then
 	        	if imgui.Checkbox(u8'Реклама в VIP CHAT (/vr)', vr1) then cfg.settings.vr1 = vr1.v end
 				if vr1.v then
@@ -1097,7 +1422,7 @@ function imgui.OnDrawFrame()
 				if fam.v then
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##fammsg", u8"Работает Ломбард №240!", fammsg) then cfg.settings.fammsg = fammsg.v end
+					if imgui.InputTextWithHint(u8"##fammsg", u8"Работает БК Эдово №57!", fammsg) then cfg.settings.fammsg = fammsg.v end
 					end
 				if imgui.Checkbox(u8'Реклама в ALLIANCE CHAT (/al)', al) then cfg.settings.al = al.v end
 				if al.v then
@@ -1115,15 +1440,15 @@ function imgui.OnDrawFrame()
 				if prstring.v then
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
-					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает Ломбард №240!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
+					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает БК Эдово №57!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
 					end
 				imgui.Separator()
-				imgui.Text(u8'					Задержка: ')
+				imgui.Text(u8'Задержка: ')
 				imgui.SameLine()
 				imgui.PushItemWidth(40)
 				if imgui.InputInt("##Задержка", delay, 0, 0) then cfg.settings.delay = delay.v end
 				imgui.SameLine() 
-				imgui.Text(u8'сек.')			
+				imgui.Text(u8'сек.')
 		    else
 		    	imgui.CenterText(u8'Включите в главном меню функцию PR Manager.')
 		    end
@@ -1149,23 +1474,45 @@ function imgui.OnDrawFrame()
     if musicmenu.v then 
 	    osmusic()
 		end
-		if bushelper.v then
-        local resX, resY = getScreenResolution()
-        local SizeX, SizeY = 200.0, 125.0
-        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(SizeX, SizeY), imgui.Cond.FirstUseEver)
-        imgui.Begin('OS Helper '..thisScript().version, bushelper, imgui.WindowFlags.NoResize)
-            imgui.Text(u8'Денежный заработок: '..salary..u8' руб.')
-            imgui.Text(u8'Количество остановок: '..stop..u8' ост.')
-            imgui.Text(u8'Выпало ларцов: '..cases..u8' лар.')
-            imgui.Text(u8'Выпало чертежей: '..chert..u8' черт.')
-            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
-            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(185, 20)) then
-                imgui.ShowCursor = false
-            end
-        imgui.End()
-    end
+		jobhelperimgui()
+    if musicmenu.v or prmwindow.v or window.v then
+			imgui.ShowCursor = true
+		end
+		if kbact.v then
+		imgui.PushStyleVar(imgui.StyleVar.WindowPadding, imgui.ImVec2(5.0, 2.4)) -- Фикс положения клавиш
+		imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0,0,0,0)) -- Убираем фон
+		imgui.SetNextWindowPos(keyboard_pos, imgui.Cond.FirstUseEver, imgui.ImVec2(0, 0))
+		imgui.Begin('##keyboard', _, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize + (move.v and 0 or imgui.WindowFlags.NoMove) )
+			keyboard_pos = imgui.GetWindowPos()
+			for i, line in ipairs(keyboards[0+1]) do
+				if (0 == 0 or 0 == 1) and i == 4 then 
+					imgui.SetCursorPosY(68) -- fix
+				elseif (0 == 0 or 0 == 1) and i == 6 then 
+					imgui.SetCursorPosY(112) -- fix
+				end
+				for key, v in ipairs(line) do
+					local size = imgui.CalcTextSize(v[1])
+					if isKeyDown(v[2]) then
+						imgui.PushStyleColor(imgui.Col.ChildWindowBg, imgui.GetStyle().Colors[imgui.Col.ButtonActive])
+					else
+						imgui.PushStyleColor(imgui.Col.ChildWindowBg, imgui.ImVec4(0,0,0,0.4))
+					end
+					imgui.BeginChild('##'..i..key, imgui.ImVec2(size.x+11, (v[1] == '\n+' or v[1] == '\nE') and size.y + 14 or size.y + 5), true)
+						imgui.Text(v[1])
+					imgui.EndChild()
+					imgui.PopStyleColor()
+					if key ~= #line then
+						imgui.SameLine()
+						if v[3] then imgui.SameLine(imgui.GetCursorPosX()+v[3]) end
+					end
+				end
+			end
+		imgui.End()
+		imgui.PopStyleColor()
+		imgui.PopStyleVar()
+	end
 end
+
 
 function character()
 	imgui.PushFont(fontsize)
@@ -1186,11 +1533,11 @@ function character()
 					if imgui.Checkbox(u8'Антиломка', antilomka) then cfg.settings.antilomka = antilomka.v end  
 				end
 				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
-				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4')
-				--[[if med.v then
+				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
+				if med.v then
 					imgui.Text('	') imgui.SameLine()
 					if imgui.Checkbox(u8'Автохилл', automed) then cfg.settings.automed = automed.v end
-					if automed.v then
+					--[[if automed.v then
 						imgui.Text('		HP:') imgui.SameLine() 
 						imgui.PushItemWidth(73) 
 						if imgui.InputInt("##автохилл", hpmed) then 
@@ -1203,8 +1550,8 @@ function character()
 							save() 
 						end
 						imgui.PopItemWidth()
-					end
-				end]]--
+					end]]--
+				end
 				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
 				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5\nНастройка автоеды доступна после включения главной функции')
 				if eat.v then
@@ -1219,6 +1566,10 @@ function character()
 					imgui.TextQuestion(u8'При вводе 0 в поле, функция будет выключена')
 					imgui.PopItemWidth() 
 				end
+				if imgui.Checkbox(u8'Авто-кликер', balloon) then cfg.settings.balloon = balloon.v end
+				imgui.TextQuestion(u8'Активация: ALT + C (зажатие)\nКликер для сборки шара/выкапывания клада и т.п.')
+				if imgui.Checkbox(u8'Бесконечный бег', infrun) then cfg.settings.infrun = infrun.v end
+				imgui.TextQuestion(u8'Активация: автоматическая\nНе позволяет устать персонажу от бега')
 				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
 				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге.')
 				if imgui.Checkbox(u8'Крафт оружия', gunmaker) then cfg.settings.gunmaker = gunmaker.v end
@@ -1260,29 +1611,26 @@ function transport()
 				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
 				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
 				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
-				if imgui.Checkbox(u8'Автосбор шара', balloon) then cfg.settings.balloon = balloon.v end
-				imgui.TextQuestion(u8'Использование: ALT + C (зажатие)\nКликер для сборки шара')
 				if imgui.Checkbox(u8'Дрифт', drift) then cfg.settings.drift = drift.v end
 				imgui.TextQuestion(u8'Активация: LSHIFT (зажатие)\nУправление заносом')
 end
 
 function osmusic()
 			local musiclist = getMusicList()
-			local sw, sh = getScreenResolution()
-			imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+			imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 			imgui.SetNextWindowSize(imgui.ImVec2(320, 400), imgui.Cond.FirstUseEver)
 			imgui.Begin(u8'OS Music | OS Helper '..thisScript().version..'##music', musicmenu, imgui.WindowFlags.NoResize)
 			local btn_size = imgui.ImVec2(-0.1, 0)
 				imgui.BeginChild('##high', imgui.ImVec2(300, 325), true)
-				for num, name, number in pairs(musiclist) do
+				for nummus, name, numbermus in pairs(musiclist) do
 					local name = name:gsub('.mp3', '')
-					if imgui.RadioButton(u8(name), radiobutton, num) then selected = num status = true end
+					if imgui.RadioButton(u8(name), radiobutton, nummus) then selected = nummus status = true end
 				end
 				imgui.EndChild()
 				imgui.BeginChild('##low', imgui.ImVec2(300, 35), true)
 				imgui.SameLine()
-					for num, name in pairs(musiclist) do
-						if num == selected then
+					for nummus, name in pairs(musiclist) do
+						if nummus == selected then
 							imgui.Text('		  ')			
 							imgui.SameLine()
 								if status then
@@ -1324,6 +1672,83 @@ function osmusic()
 					if playsound ~= nil then setAudioStreamVolume(playsound, math.floor(volume.v)) end
 				imgui.EndChild()
 			imgui.End()
+end
+
+function jobhelperimgui()
+		if bushelper.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 150), imgui.Cond.FirstUseEver)
+        imgui.Begin('Bus Helper (OS v'..thisScript().version..')##bushelper', bushelper, imgui.WindowFlags.NoResize)
+            imgui.Text(u8'Денежный заработок: '..bhsalary..u8' руб.')
+            imgui.Text(u8'Количество остановок: '..bhstop..u8' ост.')
+            imgui.Text(u8'Выпало ларцов: '..bhcases..u8' лар.')
+            imgui.Text(u8'Выпало чертежей: '..bhchert..u8' черт.')
+            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
+            if imgui.Button(u8'Очистить статистику', imgui.ImVec2(205, 20)) then
+                bhsalary = 0
+                bhstop = 0
+                bhcases = 0
+                bhchert = 0
+            end
+            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(205, 20)) then
+                imgui.ShowCursor = false
+            end
+        imgui.End()
+    end
+    if minehelper.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 170), imgui.Cond.FirstUseEver)
+        imgui.Begin('Mine Helper (OS v'..thisScript().version..')##minehelper', minehelper, imgui.WindowFlags.NoResize)
+            imgui.Text(u8'Камень: '..mhstone..u8' шт.')
+            imgui.Text(u8'Металл: '..mhmetall..u8' шт.')
+            imgui.Text(u8'Бронза: '..mhbronze..u8' шт.')
+            imgui.Text(u8'Серебро: '..mhsilver..u8' шт.')
+            imgui.Text(u8'Золото: '..mhgold..u8' шт.')
+            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
+            if imgui.Button(u8'Очистить статистику', imgui.ImVec2(205, 20)) then
+                mhstone = 0
+                mhmetall = 0
+                mhbronze = 0
+                mhsilver = 0
+                mhgold = 0
+            end
+            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(205, 20)) then
+                imgui.ShowCursor = false
+            end
+        imgui.End()
+    end
+    if farmhelper.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 115), imgui.Cond.FirstUseEver)
+        imgui.Begin('Farm Helper (OS v'..thisScript().version..')##farmhelper', farmhelper, imgui.WindowFlags.NoResize)
+            imgui.Text(u8'Лён: '..fhlyon..u8' шт.')
+            imgui.Text(u8'Хлопок: '..fhhlopok..u8' шт.')
+            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
+            if imgui.Button(u8'Очистить статистику', imgui.ImVec2(205, 20)) then
+                fhlyon = 0
+                fhhlopok = 0
+            end
+            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(205, 20)) then
+                imgui.ShowCursor = false
+            end
+        imgui.End()
+    end
+    if fishhelper.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 115), imgui.Cond.FirstUseEver)
+        imgui.Begin('Fish Helper (OS v'..thisScript().version..')##fishhelper', fishhelper, imgui.WindowFlags.NoResize)
+            imgui.Text(u8'Заработок: '..fishsalary..u8' руб.')
+            imgui.Text(u8'Ларцы: '..fishcase..u8' шт.')
+            --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
+            if imgui.Button(u8'Очистить статистику', imgui.ImVec2(205, 20)) then
+                fishsalary = 0
+                fishcase = 0
+            end
+            if imgui.Button(u8'Убрать курсор', imgui.ImVec2(205, 20)) then
+                imgui.ShowCursor = false
+            end
+        imgui.End()
+    end
 end
 -- theme
 function themeSettings(theme)
