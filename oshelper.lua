@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.2 beta')
+script_version('1.2.1 beta')
 script_author('deveeh')
 
 -- libraries
@@ -1449,6 +1449,7 @@ function imgui.OnDrawFrame()
 				if imgui.InputInt("##Задержка", delay, 0, 0) then cfg.settings.delay = delay.v end
 				imgui.SameLine() 
 				imgui.Text(u8'сек.')
+				imgui.Text(u8'Активация: /pr')
 		    else
 		    	imgui.CenterText(u8'Включите в главном меню функцию PR Manager.')
 		    end
