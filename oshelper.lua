@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.2.1 beta')
+script_version('1.3 beta')
 script_author('deveeh')
 
 -- libraries
