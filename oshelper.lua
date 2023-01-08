@@ -453,7 +453,7 @@ keyboards = {
 		}
 	}
 }
-bike = {[481] = true, [509] = true, [510] = true, [10433] = true}
+bike = {[481] = true, [509] = true, [510] = true, [10433] = true, [10444] = true, [10445] = true, [10446] = true, [10431] = true, [10430] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
 chars = {
 	["й"] = "q", ["ц"] = "w", ["у"] = "e", ["к"] = "r", ["е"] = "t", ["н"] = "y", ["г"] = "u", ["ш"] = "i", ["щ"] = "o", ["з"] = "p", ["х"] = "[", ["ъ"] = "]", ["ф"] = "a",
@@ -1449,7 +1449,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 		
 		if id == 672 then --  нопка оплаты
 			sampSendDialogResponse(672, 1, -1, "")
-			return
+			return false
 		end
 			--if id == 672 then sampSendDialogResponse(672, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
 			--if id == 671 then sampSendDialogResponse(671, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
