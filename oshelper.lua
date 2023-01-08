@@ -127,6 +127,7 @@ local cfg = inicfg.load({
 		autolock = false,
 		timeweather = false,
 		cardlogin = false,
+		mininghelper = false,
 		spawn = false,
 		prmanager = false,
 		vr1 = false,
@@ -140,6 +141,7 @@ local cfg = inicfg.load({
 		vrmsg1 = ' ',
 		fammsg = ' ',
 		admsg1 = ' ',
+		bmsg = ' ',
 		volume = 5,
 		stringmsg = ' ',
 		almsg = ' ',
@@ -147,6 +149,7 @@ local cfg = inicfg.load({
 		vskin = false,
 		adbox2 = false,
 		plusw = false,
+		bchat = false,
 		chathelper = false,
 		drift = false,
 		calcbox = false,
@@ -159,20 +162,24 @@ local cfg = inicfg.load({
 		armortimer = false,
 		job = false,
 		drugstimer = false,
+		open = false,
 		vskin = false,
 		fish = false,
 		infrun = false,
+		ztimerstatus = false,
 		prsh1 = 0,
 		prsh2 = 0,
 		prsh3 = 56,
 		prsh4 = 1,
 		keyboard = false,
 		autoscreen = false,
+		autopay = false,
 		prsh5 = 0,
 		buttonjump = 0,
 		delay = 30,
 		edelay = 0,
 		fisheye = false,
+		autoprize = false,
 		logincard = 123456,
 		fov = 101,
 	},
@@ -208,6 +215,7 @@ local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local capcha = imgui.ImBool(false)
 local eat = imgui.ImBool(cfg.settings.eat)
+local autoprize = imgui.ImBool(cfg.settings.autoprize)
 local drift = imgui.ImBool(cfg.settings.drift)
 local active = imgui.ImInt(cfg.settings.active)
 local edelay = imgui.ImInt(cfg.settings.edelay)
@@ -223,6 +231,7 @@ local vr1 = imgui.ImBool(cfg.settings.vr1)
 local gunmaker = imgui.ImBool(cfg.settings.gunmaker)
 local antilomka = imgui.ImBool(cfg.settings.antilomka)
 local vskin = imgui.ImBool(cfg.settings.vskin)
+local mininghelper = imgui.ImBool(cfg.settings.mininghelper)
 local armortimer = imgui.ImBool(cfg.settings.armortimer)
 local drugstimer = imgui.ImBool(cfg.settings.drugstimer)
 local vskin = imgui.ImBool(cfg.settings.vskin)
@@ -231,7 +240,9 @@ local vr2 = imgui.ImBool(cfg.settings.vr2)
 local fisheye = imgui.ImBool(cfg.settings.fisheye)
 local fammsg = imgui.ImBuffer(''..cfg.settings.fammsg, 256)
 local prstring = imgui.ImBool(cfg.settings.prstring)
+local bchat = imgui.ImBool(cfg.settings.bchat)
 local stringmsg = imgui.ImBuffer(''..cfg.settings.stringmsg, 256)
+local bmsg = imgui.ImBuffer(''..cfg.settings.bmsg, 256)
 local almsg = imgui.ImBuffer(''..cfg.settings.almsg,256)
 local adbox = imgui.ImBool(cfg.settings.adbox)
 local adbox2 = imgui.ImBool(cfg.settings.adbox2)
@@ -244,10 +255,13 @@ local cmds = imgui.ImBool(cfg.settings.cmds)
 local hello = imgui.ImBool(cfg.settings.hello)
 local armor = imgui.ImBool(cfg.settings.armor)
 local med = imgui.ImBool(cfg.settings.med)
+local autopay = imgui.ImBool(cfg.settings.autopay)
 local drugs = imgui.ImBool(cfg.settings.drugs)
 local rem = imgui.ImBool(cfg.settings.rem)
 local balloon = imgui.ImBool(cfg.settings.balloon)
+local ballooncolor = imgui.ImBool(false)
 local fill = imgui.ImBool(cfg.settings.fill)
+local ztimerstatus = imgui.ImBool(cfg.settings.ztimerstatus)
 local fov = imgui.ImInt(cfg.settings.fov)
 local mask = imgui.ImBool(cfg.settings.mask)
 local move = imgui.ImBool(cfg.keyboard.move)
@@ -267,6 +281,7 @@ local prsh4 = imgui.ImInt(cfg.settings.prsh4)
 local prsh5 = imgui.ImInt(cfg.settings.prsh5)
 local setskin = 0
 local autoeat = imgui.ImBool(cfg.settings.autoeat)
+local open = imgui.ImBool(cfg.settings.open)
 local automed = imgui.ImBool(cfg.settings.automed)
 local delay = imgui.ImInt(cfg.settings.delay)
 local plusw = imgui.ImBool(cfg.settings.plusw)
@@ -298,6 +313,28 @@ local speed = 0.5
 local radarHud = 0
 local timech = 0
 local keyPressed = 0
+local miningtool = true
+local automining_status = false
+local automining_getbtc = 0
+local automining_startall = 0
+local automining_fillall = 0
+
+local oxladtime = 224 -- Часы, на сколько хватит охлада
+
+local INFO = { 
+    0.029999,
+    0.059999,
+    0.09,
+    0.11999,
+    0.15,
+    0.18,
+	0.209999,
+	0.239999,
+	0.27,
+	0.3
+} -- Прибыль в час по лвл
+
+local dtext = {}
 
 keyboards = {
 	{ -- Без NumPad
@@ -416,7 +453,7 @@ keyboards = {
 		}
 	}
 }
-bike = {[481] = true, [509] = true, [510] = true}
+bike = {[481] = true, [509] = true, [510] = true, [10433] = true}
 moto = {[448] = true, [461] = true, [462] = true, [463] = true, [521] = true, [522] = true, [523] = true, [581] = true, [586] = true, [1823] = true, [1913] = true, [1912] = true, [1947] = true, [1948] = true, [1949] = true, [1950] = true, [1951] = true, [1982] = true, [2006] = true}
 chars = {
 	["й"] = "q", ["ц"] = "w", ["у"] = "e", ["к"] = "r", ["е"] = "t", ["н"] = "y", ["г"] = "u", ["ш"] = "i", ["щ"] = "o", ["з"] = "p", ["х"] = "[", ["ъ"] = "]", ["ф"] = "a",
@@ -563,6 +600,7 @@ function main()
     if not doesFileExist(getWorkingDirectory()..'\\config\\OSHelper.ini') then inicfg.save(cfg, 'OSHelper.ini') msg('Конфигурационный файл OSHelper.ini принудительно загружен') end
     if not doesDirectoryExist('moonloader/OS Helper') then createDirectory('moonloader/OS Helper') end
     if not doesDirectoryExist('moonloader/OS Helper/OS Music') then createDirectory('moonloader/OS Helper/OS Music') end
+    --imgbc = imgui.CreateTextureFromFile(getWorkingDirectory()..'moonloader/OS Helper/img/colors.jpg')
     inputHelpText = renderCreateFont("Arial", 9, FCR_BORDER + FCR_BOLD)
 	lua_thread.create(inputChat)
 	lua_thread.create(showInputHelp)
@@ -588,8 +626,8 @@ function main()
 				sampSendChat('/findibiz '..num) 
 			end
 		end)
-	        sampRegisterChatCommand('biz', function() 
-	        if cmds.v then 
+	  sampRegisterChatCommand('biz', function() 
+	    if cmds.v then 
 				sampSendChat('/bizinfo') 
 			end
 		end)
@@ -772,7 +810,6 @@ function main()
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     		if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
-
     		if drift.v then
 	    		if isCharInAnyCar(playerPed) then 
 						local car = storeCarCharIsInNoSave(playerPed)
@@ -836,19 +873,26 @@ function main()
 	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) local _, idinv = sampGetPlayerIdByCharHandle(ped) if _ then send('/faminvite '..idinv) end end
 	     	if fmenu.v and isKeyDown(0x12) and wasKeyPressed(0x46) then send('/fammenu') end
 	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
+	     	if lock.v and wasKeyPressed(0x4B) then send('/jlock') end
+	     	if open.v and wasKeyPressed(0x4F) then send('/open') end
 		    if plusw.v then
 			    if isCharOnAnyBike(playerPed) and not sampIsChatInputActive() and not sampIsDialogActive() and not isSampfuncsConsoleActive() and isKeyDown(0x57) then	-- onBike&onMoto SpeedUP [[LSHIFT]] --
 						if bike[getCarModel(storeCarCharIsInNoSave(playerPed))] then
 							setGameKeyState(16, 255)
-							wait(10)
+							wait(50)
 							setGameKeyState(16, 0)
 						elseif moto[getCarModel(storeCarCharIsInNoSave(playerPed))] then
 							setGameKeyState(1, -128)
-							wait(10)
+							wait(50)
 							setGameKeyState(1, 0)
 						end
 					end
 				end	
+				if ztimer == 0 then
+					ztimer = ztimer - 1
+					msg('Метка особо опасного преступника слетела, можете безопасно выходить из игры.')
+					wait(1000)
+				end
 			end
 		end
 	end
@@ -866,31 +910,6 @@ function translite(text)
 	end
 	return text
 end
-
-
-
---[[function sampev.onServerMessage(color, text)
-	if clear_server.v then 
-		if text:find("~~~~~~~~~~~~~~~~~~~~~~~~~~") and not text:find('говорит') then
-			return false
-		end
-		if text:find("- Основные команды") and not text:find('говорит') then
-			return false
-		end
-		if text:find("- Пригласи друга") and not text:find('говорит') then
-			return false
-		end
-		if text:find("- Донат и получение") and not text:find('говорит') then
-			return false
-		end
-		if text:find("Приходите на мероприятие: 'Дерби'") and not text:find('говорит') then
-			return false
-		end
-		if text:find("Уважаемые игроки, за нарушение РП процесса") and not text:find('говорит') then
-			return false
-		end
-	end
-end]]--
 
 function onScriptTerminate(s)
 	if s == thisScript() then
@@ -1051,6 +1070,10 @@ function piar()
 			if pronoroff and adbox.v then
 				send('/ad 1 '..u8:decode(admsg1.v))
 			end
+			wait(1000)
+			if pronoroff and bchat.v then
+				send('/b '..u8:decode(bmsg.v))
+			end
 			wait(2000)
 			if pronoroff and prstring.v then
 				send(u8:decode(stringmsg.v))
@@ -1077,21 +1100,404 @@ function getMusicList()
 end
 
 function sampev.onShowDialog(id, style, title, button1, button0, text)
-	if cardlogin.v then if id == 991 then sampSendDialogResponse(991, 1, -1, logincard.v) end end
-	if autoscreen.v then
-		if id == 10044 then 
+	if mininghelper.v then
+    if miningtool then
+	    if id == 269 or id == 0 and title:find('Обзор всех видеокарт') or title:find('Выберите видеокарту') then
+			local automining_btcoverall = 0
+			local automining_btcoverallph = 0
+			local automining_btcamountoverall = 0
+			local automining_videocards = 0
+			local automining_videocardswork = 0
+			for line in text:gmatch("[^\n]+") do
+                dtext[#dtext+1] = line 
+            end
+			
+			if dtext[1]:find('%(BTC%)') then
+			    dtext[1] = dtext[1]:gsub('%(BTC%)', '%1 | До 9 BTC')
+			end
+			
+			for d = 1, #dtext do
+				if dtext[d]:find('Полка%s+№%d+%s+|%s+%{BEF781%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+%d+%p%d+%%') then	-- Статус, работает или нет
+					automining_status = 1
+					automining_statustext = '{BEF781}'
+				else
+					automining_status = 0
+					automining_statustext = '{F78181}'
+				end
+				local automining_lvl = tonumber(dtext[d]:match('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+(%d+)%s+уровень%s+%d+%p%d+%%')) -- Уровень видюхи
+				local automining_fillstatus = tonumber(dtext[d]:match('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%%')) -- Залито охлада в процентах
+				local automining_btcamount = tonumber(dtext[d]:match('Полка%s+№%d+%s+|%s+%{......%}%W+%s+(%d+%p%d+)%s+BTC%s+%d+%s+уровень%s+%d+%p%d+%%')) -- Число битков сейчас в видюхе              						
+				if automining_lvl ~= nil and automining_fillstatus ~= nil and automining_btcamount ~= nil then					    						
+					automining_videocards = automining_videocards + 1
+					automining_btctimetofull = math.ceil((9 - automining_btcamount) / INFO[automining_lvl])
+					if automining_status == 1 then 
+						automining_videocardswork = automining_videocardswork + 1
+					end
+					if automining_btcamount >= 1 then 
+						automining_btcamountinfo = true	
+					else 
+						automining_btcamountinfo = false 
+					end
+                    					
+					automining_fillstatushours = math.ceil(oxladtime * (automining_fillstatus / 100)) -- На сколько часов охлада
+					automining_fillstatusbtc = automining_fillstatushours * INFO[automining_lvl] -- Сколько видюха еще даст BTC
+					automining_btcoverall = automining_btcoverall + automining_fillstatusbtc -- Подсчет сколько всего дадут все видюхи
+					automining_btcamountoverall = automining_btcamountoverall + math.floor(automining_btcamount) -- Подсчет сколько доступно для снятия
+					if automining_fillstatus > 0 and automining_status == 1 then
+						automining_btcoverallph = automining_btcoverallph + INFO[automining_lvl]
+					end
+					dtext[d] = dtext[d]:gsub('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+'..automining_lvl..'%s+уровень', '%1 | '..automining_statustext..INFO[automining_lvl]..'/Час')
+					if automining_fillstatus > 0 then
+						dtext[d] = dtext[d]:gsub('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+|%s+%{......%}%d+%p%d+/Час%s+'..automining_fillstatus..'%A+', '%1 '..tostring(automining_status and '{BEF781}' or '{F78181}')..'- [~'..automining_fillstatushours..' Час(ов)] {FFFFFF}|{81DAF5} [~'..string.format("%.1f", automining_fillstatusbtc)..' BTC]')
+					else
+						dtext[d] = dtext[d]:gsub('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+|%s+%{......%}%d+%p%d+/Час%s+'..automining_fillstatus..'%A+', '%1 {F78181}(!)')
+					end
+					dtext[d] = dtext[d]:gsub('Полка%s+№%d+%s+|%s+%{......%}%W+%s+%d+%p%d+%s+BTC', '%1 '..tostring(automining_btcamountinfo and '{BEF781}•' or '{F78181}•')..' {ffffff}| '..automining_statustext..'~'..automining_btctimetofull..'ч')
+				end				
+			end
+			
+		if id == 269 and title:find('Выберите видеокарту') then
+            if worktread ~= nil then
+                worktread:terminate()
+            end			
+		    local automining_fillstatus1 = tonumber(text:match('Полка №1 |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%A'))
+			local automining_fillstatus2 = tonumber(text:match('Полка №2 |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%A'))
+			local automining_fillstatus3 = tonumber(text:match('Полка №3 |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%A'))
+			local automining_fillstatus4 = tonumber(text:match('Полка №4 |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%A'))
+			
+			local automining_getbtcstatus1 = tonumber(text:match('Полка №1 |%s+%{......%}%W+%s+(%d+)%p%d+%s+BTC%s+%d+%s+уровень%s+%d+.'))
+			local automining_getbtcstatus2 = tonumber(text:match('Полка №2 |%s+%{......%}%W+%s+(%d+)%p%d+%s+BTC%s+%d+%s+уровень%s+%d+.'))
+			local automining_getbtcstatus3 = tonumber(text:match('Полка №3 |%s+%{......%}%W+%s+(%d+)%p%d+%s+BTC%s+%d+%s+уровень%s+%d+.'))
+			local automining_getbtcstatus4 = tonumber(text:match('Полка №4 |%s+%{......%}%W+%s+(%d+)%p%d+%s+BTC%s+%d+%s+уровень%s+%d+.'))				
+			
+			for i = 1, 4 do
+			    local automining_lvl = tonumber(text:match('Полка №'..i..' |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+(%d+)%s+уровень%s+%d+.'))
+				local automining_fillstatus = tonumber(text:match('Полка №'..i..' |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+(%d+%p%d+)%A'))
+			    if automining_fillstatus ~= nil then
+					if automining_fillstatus > 0 and automining_lvl ~= nil then
+						automining_fillstatushours =  math.ceil(224 * (automining_fillstatus / 100))
+						text = text:gsub('Полка №'..i..' |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень%s+%d+%p%d+%A', '%1 {BEF781}- [~'..automining_fillstatushours..' Час(ов)]')	
+					end				
+					if automining_lvl > 0 then
+						text = text:gsub('Полка №'..i..' |%s+%{......%}%W+%s+%d+%p%d+%s+BTC%s+%d+%s+уровень', '%1 | '..INFO[automining_lvl]..'/Час')
+					end
+                end				
+			end					
+			
+            if automining_getbtc == 1 or automining_getbtc == 2 or automining_getbtc == 3 or automining_getbtc == 4 then
+				if automining_getbtc == 1 then
+				    if automining_getbtcstatus1 ~= nil then
+						if automining_getbtcstatus1 < 1 then
+							automining_getbtc = 2
+						elseif text:find('Полка №1 | Свободна') then
+							automining_getbtc = 2
+						end
+					else
+					    automining_getbtc = 2
+					end
+				end
+				if automining_getbtc == 2 then
+				    if automining_getbtcstatus2 ~= nil then
+						if automining_getbtcstatus2 < 1 then
+							automining_getbtc = 3
+						elseif text:find('Полка №2 | Свободна') then
+							automining_getbtc = 3
+						end
+					else
+					    automining_getbtc = 3
+					end
+				end
+				if automining_getbtc == 3 then
+					if automining_getbtcstatus3 ~= nil then
+						if automining_getbtcstatus3 < 1 then
+							automining_getbtc = 4
+						elseif text:find('Полка №3 | Свободна') then
+							automining_getbtc = 4
+						end
+					else
+					    automining_getbtc = 4
+					end
+				end
+				if automining_getbtc == 4 then
+					if automining_getbtcstatus4 ~= nil then
+						if automining_getbtcstatus4 < 1 then
+							automining_getbtc = 10
+							msg('Вся прибыль уже собрана.')
+							worktread = lua_thread.create(PressAlt)
+						elseif text:find('Полка №4 | Свободна') then
+							automining_getbtc = 10
+							msg('Вся прибыль уже собрана.')
+							worktread = lua_thread.create(PressAlt)
+						end
+					else
+					    automining_getbtc = 10					
+					end
+				end
+				adID = automining_getbtc - 1
+			    sampSendDialogResponse(269,1,adID,nil)				
+            end				
+			
+			if automining_startall == 1 or automining_startall == 2 or automining_startall == 3 or automining_startall == 4 then
+				if automining_startall == 1 then
+				    if text:find('Полка №1 | {BEF781}Работает') then
+						automining_startall = 2
+					elseif text:find('Полка №1 | Свободна') then
+					    automining_startall = 2
+					end
+				end
+				if automining_startall == 2 then
+				    if text:find('Полка №2 | {BEF781}Работает') then
+				        automining_startall = 3
+					elseif text:find('Полка №2 | Свободна') then
+					    automining_startall = 3
+					end
+				end
+				if automining_startall == 3 then
+				    if text:find('Полка №3 | {BEF781}Работает') then
+				        automining_startall = 4
+					elseif text:find('Полка №3 | Свободна') then
+					    automining_startall = 4
+					end
+				end
+				if automining_startall == 4 then
+				    if text:find('Полка №4 | {BEF781}Работает') then
+				        automining_startall = 10
+						msg('Все видеокарты уже запущены.')
+					    worktread = lua_thread.create(PressAlt)
+					elseif text:find('Полка №4 | Свободна') then
+					    automining_startall = 10
+					    msg('Все видеокарты уже запущены.')
+					    worktread = lua_thread.create(PressAlt)
+					end
+				end			
+				adID = automining_startall - 1
+			    sampSendDialogResponse(269,1,adID,nil)
+			end
+			
+            if automining_fillall == 1 or automining_fillall == 2 or automining_fillall == 3 or automining_fillall == 4 then
+				if automining_fillall == 1 then
+				    if automining_fillstatus1 ~= nil then
+						if automining_fillstatus1 > 51 then
+							automining_fillall = 2
+						elseif text:find('Полка №1 | Свободна') then
+							automining_fillall = 2
+						end
+					else
+					    automining_fillall = 2
+					end
+				end
+				if automining_fillall == 2 then
+				    if automining_fillstatus2 ~= nil then
+						if automining_fillstatus2 > 51 then
+							automining_fillall = 3
+						elseif text:find('Полка №2 | Свободна') then
+							automining_fillall = 3
+						end
+					else
+					    automining_fillall = 3
+					end
+				end
+				if automining_fillall == 3 then
+					if automining_fillstatus3 ~= nil then
+						if automining_fillstatus3 > 51 then
+							automining_fillall = 4
+						elseif text:find('Полка №3 | Свободна') then
+							automining_fillall = 4
+						end
+					else
+					    automining_fillall = 4
+					end
+				end
+				if automining_fillall == 4 then
+					if automining_fillstatus4 ~= nil then
+						if automining_fillstatus4 > 75 then
+							automining_fillall = 10
+							msg('В видеокартах более 75% жидкости.')
+							worktread = lua_thread.create(PressAlt)
+						elseif text:find('Полка №4 | Свободна') then
+							automining_fillall = 10
+							msg('В видеокартах более 75% жидкости.')
+							worktread = lua_thread.create(PressAlt)
+						end
+					else
+					    automining_fillall = 10
+					end
+				end			
+				adID = automining_fillall - 1
+			    sampSendDialogResponse(269,1,adID,nil)
+			end			
+		end
+		
+		text = table.concat(dtext,'\n')
+        dtext = {}
+        text = text .. '\n' .. ' '
+		text = text .. '\n' .. color .. 'Информация\t' .. color .. 'Доступно снять\t' .. color .. 'Прибыль в час\t' .. color .. 'Прибыль прогнозируемая'
+		text = text .. '\n' .. '{FFFFFF}Всего: '..automining_videocards..' | {FFFFFF}Работают: '..automining_videocardswork..'\t{FFFFFF}'..string.format("%.0f", automining_btcamountoverall)..' BTC\t{FFFFFF}'..automining_btcoverallph..' {FFFFFF}BTC\t{FFFFFF}'..string.format("%.1f", automining_btcoverall)..' {FFFFFF}BTC' 
+			if title:find('Выберите видеокарту') then	
+				if text:find('Полка №1 | Свободна') and text:find('Полка №2 | Свободна') and text:find('Полка №3 | Свободна') and text:find('Полка №4 | Свободна') then
+					text = text .. '\n' .. ' '
+					text = text .. '\n' .. color .. '>> {FFFFFF}На полках нет видеокарт, забрать прибыль не получится'
+					text = text .. '\n' .. color .. '>> {FFFFFF}На полках нет видеокарт, включить видеокарты не получится'
+					text = text .. '\n' .. color .. '>> {FFF}На полках нет видеокарт, залить охлаждающую жидкость не получится'
+				else
+					text = text .. '\n' .. ' '
+					text = text .. '\n' .. color .. '>> {FFFFFF}Собрать прибыль'
+					text = text .. '\n' .. color .. '>> {FFFFFF}Запустить видеокарты'
+					text = text .. '\n' .. color .. '>> {FFFFFF}Залить охлаждающую жидкость (по 1 шт.)'
+				end
+			end
+		automining_btcoverall = 0
+	    automining_btcoverallph = 0        		
+		return {id, style, title, button1, button0, text}
+		end
+		
+		if id == 270 then	    
+		    if automining_getbtc == 1 or automining_getbtc == 2 or automining_getbtc == 3 or automining_getbtc == 4 then
+				if title:find('Стойка №%d+%s+| Полка №'..automining_getbtc..'') then	
+					local automining_btcamount = tonumber(text:match('Забрать прибыль %((%d+).%d+ '))
+					if automining_btcamount ~= 0 then
+						sampSendDialogResponse(270,1,1,nil) -- Да
+					else
+						automining_getbtc = automining_getbtc + 1
+						sampSendDialogResponse(270,0,nil,nil)
+						if automining_getbtc == 5 then
+							msg('Прибыль добавлена вам в инвентарь.')
+							automining_getbtc = 10
+						end
+					end
+				else
+				    sampSendDialogResponse(270,0,nil,nil)
+					worktread = lua_thread.create(PressAlt)
+				end
+			end
+			
+		    if automining_startall == 1 or automining_startall == 2 or automining_startall == 3 or automining_startall == 4 then
+				if text:find('Запустить видеокарту') and title:find('Стойка №%d+%s+| Полка №'..automining_startall..'') then
+				    sampSendDialogResponse(270,1,0,nil)
+				    automining_startall = automining_startall + 1
+				    sampSendDialogResponse(270,0,nil,nil)
+				else
+				    sampSendDialogResponse(270,0,nil,nil)
+				end
+				if automining_startall == 5 then
+					msg('Все видеокарты запущены.')
+					automining_startall = 10
+				end
+			end
+
+		    if automining_fillall == 1 or automining_fillall == 2 or automining_fillall == 3 or automining_fillall == 4 then
+				if title:find('Стойка №%d+%s+| Полка №'..automining_fillall..'') then
+				    sampSendDialogResponse(270,1,2,nil)
+				    automining_fillall = automining_fillall + 1
+				    worktread = lua_thread.create(PressAlt)
+				else
+				    worktread = lua_thread.create(PressAlt)
+				end
+				if automining_filltall == 5 then
+					msg('Жидкость успешно залита.')
+					sampSendDialogResponse(270,0,nil,nil)
+					automining_startall = 10
+					worktread = lua_thread.create(PressAlt)
+				end
+			end
+	    end
+		
+	    if id == 271 and title:find('Вывод прибыли видеокарты') then
+     		if automining_getbtc == 1 or automining_getbtc == 2 or automining_getbtc == 3 or automining_getbtc == 4 then
+				automining_getbtc = automining_getbtc + 1
+				sampSendDialogResponse(271,1,nil,nil) -- Да
+				worktread = lua_thread.create(PressAlt)
+					if automining_getbtc == 5 then
+						msg('Прибыль добавлена вам в инвентарь.')
+						automining_getbtc = 10
+					end
+				return false
+				end
+	    end			
+		end
+	end
+	if cardlogin.v and id == 782 then sampSendDialogResponse(782, 1, -1, logincard.v) end
+	if ztimerstatus.v then
+		if id == 0 and title:find('Внимание!') then
+				lua_thread.create(function() 
+				msg('Вы помечены как опасный преступник, отсчёт 10 минут пошёл.')
+				ztimer = 600
+					while ztimer > 0 do
+						printStringNow(u8'Z-Timer: ~r~~h~'..ztimer..' ~w~sec.', 1500) 
+						ztimer = ztimer - 1
+						wait(1000)
+					end
+				end)
+				return false
+		end
+	end
+	if autoprize.v then
+		if id == 519 and text:find('»» Следующая страница') then 
+			sampSendDialogResponse(id, 1, 1, "")
+		else
+			sampSendDialogResponse(id, 1, 0, "")
+			return false
+		end
+	end
+	if id == 520 then 
+		sampSendDialogResponse(id, 1, -1, "")
+	end
+	if autopay.v then 
+		if id == 756 then  -- Список бизов
+			sampSendDialogResponse(id, 1, 0, "")
+		end
+		
+		if id == 672 then -- Кнопка оплаты
+			sampSendDialogResponse(id, 1, -1, "")
+			return
+		end
+			--if id == 672 then sampSendDialogResponse(672, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
+			--if id == 671 then sampSendDialogResponse(671, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
+	end
+	if autoscreen.v and id == 10044 then
 			lua_thread.create(function() 
 				wait(400)
 				sampSendChat('/time')
 				wait(600)
 				setVirtualKeyDown(119, true) wait(0) setVirtualKeyDown (119, false)
 		end) 
-		end
 	end
 end
+
+function sampev.onSendDialogResponse(id, button, list, input)
+	if mininghelper.v then
+	  if id == 269 and list == 8 and button == 1 then
+		    automining_getbtc = 1
+	        worktread = lua_thread.create(PressAlt)
+			msg('Сбор прибыли, ожидайте...')
+		end
+		if id == 269 and list == 9 and button == 1 then
+		    automining_startall = 1
+	        worktread = lua_thread.create(PressAlt)
+			msg('Видеокарты запускаются, ожидайте...')
+		end
+		if id == 269 and list == 10 and button == 1 then
+		    automining_fillall = 1
+	        worktread = lua_thread.create(PressAlt)
+			msg('Система охлаждения восполняется по 50%, ожидайте...')
+		end	
+	end
+end
+
+function PressAlt()
+    time = os.time()
+	repeat wait(500)
+		local _, idplayer = sampGetPlayerIdByCharHandle(PLAYER_PED)
+		local data = allocateMemory(68)
+		sampStorePlayerOnfootData(idplayer, data)
+		setStructElement(data, 4, 2, 1024, false)
+		sampSendOnfootData(data)
+		freeMemory(data)
+    until os.time() >= time+5
+end
+
 function sampev.onServerMessage(color, text)
-		if drugstimer.v then
-			if text:find('Здоровье пополнено на') and not text:find('говорит:') then
+		if drugstimer.v and text:find('Здоровье пополнено на') and not text:find('говорит:') then
 				lua_thread.create(function() 
 				printStringNow(u8'DRUGS: Timer started.', 5000)
 				wait(20000)
@@ -1103,7 +1509,6 @@ function sampev.onServerMessage(color, text)
 				wait(5000)
 				printStringNow(u8'DRUGS: GO GO GO!', 3000)
 				end)
-			end
 		end
 		if armortimer.v then
 			local armourlvl = sampGetPlayerArmor(id)
@@ -1122,10 +1527,8 @@ function sampev.onServerMessage(color, text)
 				end)
 			end
 		end
-	  if antilomka.v then
-			if text:find('У вас началась ломка') and not text:find('говорит:') then
+	  if antilomka.v and text:find('У вас началась ломка') and not text:find('говорит:') then
 				send('/usedrugs 1')
-			end
 		end
 		bushelpermsg()
 		minehelpermsg()
@@ -1187,8 +1590,8 @@ function sampev.onServerMessage(color, text) --jobhelper
 		if fish.v then
 			if text:find('Вам добавлено: предмет "Ларец рыболова". Чтобы открыть инвентарь,') and not text:find('говорит:') then
 	        fishcase = fishcase + 1
-	    elseif text:find('Вам добавлено: предмет "Рыба %A". Чтобы открыть инвентарь,') and not text:find('говорит:') then
-	    		fishsalary = fishsalary + 1 
+	    elseif text:find('Вам добавлено: предмет "Рыба (%A+)". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	    		fishsalary = fishsalary + 15000 
 	    end
 		end
 end
@@ -1289,6 +1692,12 @@ function imgui.OnDrawFrame()
 				imgui.PushItemWidth(54.5) 
 				if imgui.InputInt(u8'##логин банк', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
 				end
+				if imgui.Checkbox(u8'Автооплата налогов', autopay) then cfg.settings.autopay = autopay.v end
+				imgui.TextQuestion(u8'Не работает с новыми диалогами')
+				if imgui.Checkbox(u8'Автосбор ежедневных призов', autoprize) then cfg.settings.autoprize = autoprize.v end
+				imgui.TextQuestion(u8'Автоматически собирает призы в /dw_prizes')
+				if imgui.Checkbox(u8'Mining Helper', mininghelper) then cfg.settings.mininghelper = mininghelper.v end
+				imgui.TextQuestion(u8'Сбор прибыли, охлаждение видеокарт в пару кликов')
 				if imgui.Checkbox(u8'Графическая клавиатура', keyboard) then cfg.settings.keyboard = keyboard.v end
 				if imgui.Checkbox(u8'Autoscreen', autoscreen) then cfg.settings.autoscreen = autoscreen.v end
 				imgui.TextQuestion(u8'При появлении диалога с предложением, \nавтоматически пишет /time и нажимает F8')
@@ -1321,7 +1730,8 @@ function imgui.OnDrawFrame()
 					if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
 					elseif cfg.settings.theme == 1 then themeSettings(3) color = '{00b052}'
 					elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-					else cfg.settings.theme = 3 themeSettings(1) color = '{ff4747}'
+					--elseif cfg.settings.theme == 3 then themeSettings(4) color = '{ff4747}'
+					else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
 					end
 				end
 				if imgui.Checkbox(u8'Приветственное сообщение', hello) then cfg.settings.hello = hello.v end
@@ -1423,7 +1833,7 @@ function imgui.OnDrawFrame()
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
 					if imgui.InputTextWithHint(u8"##fammsg", u8"Работает БК Эдово №57!", fammsg) then cfg.settings.fammsg = fammsg.v end
-					end
+				end
 				if imgui.Checkbox(u8'Реклама в ALLIANCE CHAT (/al)', al) then cfg.settings.al = al.v end
 				if al.v then
 					imgui.Text(u8'Сообщение: ')
@@ -1435,13 +1845,19 @@ function imgui.OnDrawFrame()
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
 					if imgui.InputTextWithHint(u8"##admsg1", u8"Работает БК Лыткарино №56!", admsg1) then cfg.settings.admsg1 = admsg1.v end
-					end
+				end
+				if imgui.Checkbox(u8'Реклама в NRP CHAT (/b)', bchat) then cfg.settings.bchat = bchat.v end
+				if bchat.v then
+					imgui.Text(u8'Сообщение: ')
+					imgui.SameLine()
+					if imgui.InputTextWithHint(u8"##bmsg", u8"Работает БК Эдово №57!", bmsg) then cfg.settings.bmsg = bmsg.v end
+				end
 				if imgui.Checkbox(u8'Дополнительная строка', prstring) then cfg.settings.prstring = prstring.v end
 				if prstring.v then
 					imgui.Text(u8'Сообщение: ')
 					imgui.SameLine()
 					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает БК Эдово №57!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
-					end
+				end
 				imgui.Separator()
 				imgui.Text(u8'Задержка: ')
 				imgui.SameLine()
@@ -1567,6 +1983,8 @@ function character()
 					imgui.TextQuestion(u8'При вводе 0 в поле, функция будет выключена')
 					imgui.PopItemWidth() 
 				end
+				if imgui.Checkbox(u8'Z-Timer', ztimerstatus) then cfg.settings.ztimerstatus = ztimerstatus.v end
+				imgui.TextQuestion(u8'После выдачи метки Z, начнется отсчёт 600 секунд.')
 				if imgui.Checkbox(u8'Авто-кликер', balloon) then cfg.settings.balloon = balloon.v end
 				imgui.TextQuestion(u8'Активация: ALT + C (зажатие)\nКликер для сборки шара/выкапывания клада и т.п.')
 				if imgui.Checkbox(u8'Бесконечный бег', infrun) then cfg.settings.infrun = infrun.v end
@@ -1603,17 +2021,23 @@ function transport()
 				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
 				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
 				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
-				imgui.TextQuestion(u8'Активация: L')
-				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = fill.v end
+				imgui.TextQuestion(u8'Активация: L, K (аренд. т/с)')
+				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = rem.v end
 				imgui.TextQuestion(u8'Использовать ремкомплект: R')
 				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
 				imgui.TextQuestion(u8'Использовать канистру: B')
 				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
 				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
+				if imgui.Checkbox(u8'Открытие шлагбаума', open) then cfg.settings.open = open.v end
+				imgui.TextQuestion(u8'Открыть шлагбаум: O')
 				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
 				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
 				if imgui.Checkbox(u8'Дрифт', drift) then cfg.settings.drift = drift.v end
 				imgui.TextQuestion(u8'Активация: LSHIFT (зажатие)\nУправление заносом')
+				--[[if imgui.Checkbox(u8'Цвета покраски', ballooncolor) then balloncolor = not balloncolor if ballooncolor then 
+						imgui.Image(imgbc, imgui.ImVec2(200, 200)) 
+				end 
+			end]]--
 end
 
 function osmusic()
@@ -1739,6 +2163,7 @@ function jobhelperimgui()
         imgui.SetNextWindowSize(imgui.ImVec2(220, 115), imgui.Cond.FirstUseEver)
         imgui.Begin('Fish Helper (OS v'..thisScript().version..')##fishhelper', fishhelper, imgui.WindowFlags.NoResize)
             imgui.Text(u8'Заработок: '..fishsalary..u8' руб.')
+            imgui.TextQuestion(u8'Заработок приблизителен, 1 рыба = 15.000руб')
             imgui.Text(u8'Ларцы: '..fishcase..u8' шт.')
             --imgui.SetCursorPos(imgui.ImVec2(300, 382.5))
             if imgui.Button(u8'Очистить статистику', imgui.ImVec2(205, 20)) then
