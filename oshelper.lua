@@ -1432,23 +1432,23 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 		end
 	end
 	if autoprize.v then
-		if id == 519 and text:find('»» Следующая страница') and id ~= 22 then 
-			sampSendDialogResponse(id, 1, 1, "")
-		else
-			sampSendDialogResponse(id, 1, 0, "")
+		if id == 519 and text:find('»» Следующая страница') then 
+			sampSendDialogResponse(519, 1, 1, "")
+		elseif id == 519 and not text:find('»» Следующая страница') then 
+			sampSendDialogResponse(519, 1, 0, "")
 			return false
 		end
 	end
-	if id == 520 and id ~= 22 then 
-		sampSendDialogResponse(id, 1, -1, "")
+	if id == 520 then 
+		sampSendDialogResponse(520, 1, -1, "")
 	end
 	if autopay.v then 
 		if id == 756 then  -- Список бизов
-			sampSendDialogResponse(id, 1, 0, "")
+			sampSendDialogResponse(756, 1, 0, "")
 		end
 		
 		if id == 672 then -- Кнопка оплаты
-			sampSendDialogResponse(id, 1, -1, "")
+			sampSendDialogResponse(672, 1, -1, "")
 			return
 		end
 			--if id == 672 then sampSendDialogResponse(672, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
