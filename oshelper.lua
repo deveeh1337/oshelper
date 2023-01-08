@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.3 beta')
+script_version('1.3.1 beta')
 script_author('deveeh')
 
 -- libraries
@@ -1447,12 +1447,11 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 			sampSendDialogResponse(756, 1, 0, "")
 		end
 		
-		if id == 672 then --  нопка оплаты
-			sampSendDialogResponse(672, 1, -1, "")
+		if id == 672 or id == 671 then --  нопка оплаты
+			sampSendDialogResponse(id, 1, -1, nil) 
+			sampCloseCurrentDialogWithButton(1)
 			return false
 		end
-			--if id == 672 then sampSendDialogResponse(672, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
-			--if id == 671 then sampSendDialogResponse(671, 1, -1, nil) sampCloseCurrentDialogWithButton(1) return false end
 	end
 	if autoscreen.v and id == 10044 then
 			lua_thread.create(function() 
