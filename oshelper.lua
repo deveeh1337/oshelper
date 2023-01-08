@@ -1432,14 +1432,14 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 		end
 	end
 	if autoprize.v then
-		if id == 519 and text:find('»» Следующая страница') then 
+		if id == 519 and text:find('»» Следующая страница') and id ~= 22 then 
 			sampSendDialogResponse(id, 1, 1, "")
 		else
 			sampSendDialogResponse(id, 1, 0, "")
 			return false
 		end
 	end
-	if id == 520 then 
+	if id == 520 and id ~= 22 then 
 		sampSendDialogResponse(id, 1, -1, "")
 	end
 	if autopay.v then 
@@ -1984,13 +1984,13 @@ function character()
 					imgui.PopItemWidth() 
 				end
 				if imgui.Checkbox(u8'Z-Timer', ztimerstatus) then cfg.settings.ztimerstatus = ztimerstatus.v end
-				imgui.TextQuestion(u8'После выдачи метки Z, начнется отсчёт 600 секунд.')
+				imgui.TextQuestion(u8'После выдачи метки Z, начнется отсчёт 600 секунд')
 				if imgui.Checkbox(u8'Авто-кликер', balloon) then cfg.settings.balloon = balloon.v end
 				imgui.TextQuestion(u8'Активация: ALT + C (зажатие)\nКликер для сборки шара/выкапывания клада и т.п.')
 				if imgui.Checkbox(u8'Бесконечный бег', infrun) then cfg.settings.infrun = infrun.v end
 				imgui.TextQuestion(u8'Активация: автоматическая\nНе позволяет устать персонажу от бега')
 				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
-				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге.')
+				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге')
 				if imgui.Checkbox(u8'Крафт оружия', gunmaker) then cfg.settings.gunmaker = gunmaker.v end
 				imgui.TextQuestion(u8'Скрафтить оружие: /cg')
 				if gunmaker.v then
