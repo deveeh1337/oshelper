@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.3.1 beta')
+script_version('1.4 pre-final')
 script_author('deveeh')
 
 -- libraries
@@ -102,6 +102,7 @@ local direct = 'moonloader\\config\\OSHelper.ini'
 local cfg = inicfg.load({
 	settings = {
 		color = '',
+		xcolor = '',
 		active = 0,
 		cheatcode = 'oh',
 		theme = 0,
@@ -118,6 +119,7 @@ local cfg = inicfg.load({
 		mine = false,
 		farm = false,
 		drugs = false,
+		rgb = 1.0, 1.0, 1.0,
 		rem = false,
 		fill = false,
 		mask = false,
@@ -171,9 +173,11 @@ local cfg = inicfg.load({
 		prsh2 = 0,
 		prsh3 = 56,
 		prsh4 = 1,
+		masktimer = false,
 		keyboard = false,
 		autoscreen = false,
 		autopay = false,
+		prconnect = false,
 		prsh5 = 0,
 		buttonjump = 0,
 		delay = 30,
@@ -181,7 +185,17 @@ local cfg = inicfg.load({
 		fisheye = false,
 		autoprize = false,
 		logincard = 123456,
-		fov = 101,
+		fov = 100,
+		timestate = false,
+		autorun = false,
+		r = 0.00,
+		g = 0.00,
+		b = 0.00,
+	},
+	timestamp = {
+        x = 300,
+        y = 300,
+        fontsize = 12,
 	},
 	keyboard = {
 		kbact = false,
@@ -191,35 +205,54 @@ local cfg = inicfg.load({
 	},
 	keylogger = {
 		active = true,
-	}
+	},
 }, "OSHelper")
 
 -- variables
+checkboxes = {
+	job = imgui.ImBool(cfg.settings.job),
+	bus = imgui.ImBool(cfg.settings.bus),
+  mine = imgui.ImBool(cfg.settings.mine),
+  farm = imgui.ImBool(cfg.settings.farm),
+  fish = imgui.ImBool(cfg.settings.fish),
+  hello = imgui.ImBool(cfg.settings.hello),
+	armor = imgui.ImBool(cfg.settings.armor),
+	med = imgui.ImBool(cfg.settings.med),
+	autopay = imgui.ImBool(cfg.settings.autopay),
+	drugs = imgui.ImBool(cfg.settings.drugs),
+	rem = imgui.ImBool(cfg.settings.rem),
+	fill = imgui.ImBool(cfg.settings.fill),
+	timestate = imgui.ImBool(cfg.settings.timestate),
+	eat = imgui.ImBool(cfg.settings.eat),
+	autoprize = imgui.ImBool(cfg.settings.autoprize),
+	drift = imgui.ImBool(cfg.settings.drift),
+}
 local window = imgui.ImBool(false)
 local musicmenu = imgui.ImBool(false)
 local prmwindow = imgui.ImBool(false)
 local cwindow = imgui.ImBool(false)
 local bushelper = imgui.ImBool(false)
+local imw_reconnecting = imgui.ImBool(false)
 local minehelper = imgui.ImBool(false)
 local farmhelper = imgui.ImBool(false)
+local moving = false
 local fishhelper = imgui.ImBool(false)
 local kbset = imgui.ImBool(false)
 local keyboard = imgui.ImBool(cfg.settings.keyboard)
+local autorun = imgui.ImBool(cfg.settings.autorun)
 local kbact = imgui.ImBool(cfg.keyboard.kbact)
 local keyboard_pos = imgui.ImVec2(cfg.keyboard.posx, cfg.keyboard.posy)
 local job = imgui.ImBool(cfg.settings.job)
-local bus = imgui.ImBool(cfg.settings.bus)
-local mine = imgui.ImBool(cfg.settings.mine)
-local farm = imgui.ImBool(cfg.settings.farm)
 local color = cfg.settings.color
 local textcolor = '{c7c7c7}'
 local capcha = imgui.ImBool(false)
-local eat = imgui.ImBool(cfg.settings.eat)
-local autoprize = imgui.ImBool(cfg.settings.autoprize)
-local drift = imgui.ImBool(cfg.settings.drift)
 local active = imgui.ImInt(cfg.settings.active)
+local timestamp__fontsize = imgui.ImInt(cfg.timestamp.fontsize)
 local edelay = imgui.ImInt(cfg.settings.edelay)
 local gunmode = imgui.ImInt(cfg.settings.gunmode)
+local masktimer = imgui.ImBool(cfg.settings.masktimer)
+local colortheme = imgui.ImFloat3(cfg.settings.r, cfg.settings.g, cfg.settings.b) -- colortheme
+--local colortheme = imgui.ImFloat3(0,0,0) -- colortheme
 local buttonjump = imgui.ImInt(cfg.settings.buttonjump)
 local bullet = imgui.ImInt(cfg.settings.bullet)
 local time = imgui.ImInt(cfg.settings.time)
@@ -249,18 +282,10 @@ local adbox2 = imgui.ImBool(cfg.settings.adbox2)
 local admsg1 = imgui.ImBuffer(''..cfg.settings.admsg1, 256)
 local admsg2 = imgui.ImBuffer(256)
 local fam = imgui.ImBool(cfg.settings.fam)
+local prconnect = imgui.ImBool(cfg.settings.prconnect)
 local al = imgui.ImBool(cfg.settings.al)
 local theme = imgui.ImInt(cfg.settings.theme)
 local cmds = imgui.ImBool(cfg.settings.cmds)
-local hello = imgui.ImBool(cfg.settings.hello)
-local armor = imgui.ImBool(cfg.settings.armor)
-local med = imgui.ImBool(cfg.settings.med)
-local autopay = imgui.ImBool(cfg.settings.autopay)
-local drugs = imgui.ImBool(cfg.settings.drugs)
-local rem = imgui.ImBool(cfg.settings.rem)
-local balloon = imgui.ImBool(cfg.settings.balloon)
-local ballooncolor = imgui.ImBool(false)
-local fill = imgui.ImBool(cfg.settings.fill)
 local ztimerstatus = imgui.ImBool(cfg.settings.ztimerstatus)
 local fov = imgui.ImInt(cfg.settings.fov)
 local mask = imgui.ImBool(cfg.settings.mask)
@@ -270,10 +295,10 @@ local finv = imgui.ImBool(cfg.settings.finv)
 local lock = imgui.ImBool(cfg.settings.lock)
 local autolock = imgui.ImBool(cfg.settings.autolock)
 local cardlogin = imgui.ImBool(cfg.settings.cardlogin)
-local fish = imgui.ImBool(cfg.settings.fish)
 local spawn = imgui.ImBool(cfg.settings.spawn)
 local logincard = imgui.ImInt(cfg.settings.logincard)
 local hpmed = imgui.ImInt(cfg.settings.hpmed)
+local balloon = imgui.ImBool(cfg.settings.balloon)
 local prsh1 = imgui.ImInt(cfg.settings.prsh1)
 local prsh2 = imgui.ImInt(cfg.settings.prsh2)
 local prsh3 = imgui.ImInt(cfg.settings.prsh3)
@@ -583,12 +608,19 @@ end
 -- main
 function main()
     while not isSampAvailable() do wait(200) end
-    if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
-		elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
-		elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-		else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
+    if cfg.settings.theme == 0 then themeSettings(0) color = '{ff4747}'
+		elseif cfg.settings.theme == 1 then themeSettings(1) color = '{00bd5c}'
+		elseif cfg.settings.theme == 2 then themeSettings(2) color = '{007ABE}'
+		elseif cfg.settings.theme == 3 then themeSettings(3) color = '{00C091}'
+		elseif cfg.settings.theme == 4 then themeSettings(4) color = '{C27300}'
+		elseif cfg.settings.theme == 5 then themeSettings(5) color = '{5D00C0}'
+		elseif cfg.settings.theme == 6 then themeSettings(6) color = '{8CBF00}'
+		elseif cfg.settings.theme == 7 then themeSettings(7) color = '{BF0072}'
+		elseif cfg.settings.theme == 8 then themeSettings(8) color = '{755B46}'
+		elseif cfg.settings.theme == 9 then themeSettings(9) color = '{5E5E5E}'
+		elseif cfg.settings.theme == 10 then themeSettings(10)
 		end
-    if hello.v then
+    if checkboxes.hello.v then
 			if active.v == 0 then
 				msg('Авторы: '..color..'deveeh'..textcolor..' и '..color..'casparo'..textcolor..'. Команда активации: '..color..'/oshelper') 
 			end
@@ -612,7 +644,7 @@ function main()
     sampRegisterChatCommand('pr', function()
 		if prmanager.v then pronoroff = not pronoroff; msg(pronoroff and 'Реклама включена.' or 'Реклама выключена.') end
 		lua_thread.create(function()
-			if pronoroff and prmanager.v then piar() local delay = cfg.settings.delay * 1000 wait(delay) return true end 
+			if pronoroff and prmanager.v then piar() local delay = cfg.settings.delay * 1000 wait(delay) return true end
 		end)
 	end)
 	    sampRegisterChatCommand('fh', function(num)
@@ -660,8 +692,8 @@ function main()
 		end)
 		sampRegisterChatCommand("ss", function() send('/setspawn') end)
 		sampRegisterChatCommand("bus", function()
-			if job.v then
-				if bus.v then 
+			if checkboxes.job.v then
+				if checkboxes.bus.v then 
 					bushelper.v = not bushelper.v
 				else
 					msg('У вас не включена функция Bus Helper.')  
@@ -671,8 +703,8 @@ function main()
 			end
 		end)
 		sampRegisterChatCommand("fish", function()
-			if job.v then
-				if fish.v then 
+			if checkboxes.job.v then
+				if checkboxes.fish.v then 
 					fishhelper.v = not fishhelper.v
 				else
 					msg('У вас не включена функция Fish Helper.')  
@@ -682,8 +714,8 @@ function main()
 			end
 		end)
 		sampRegisterChatCommand("mine", function()
-			if job.v then
-				if mine.v then 
+			if checkboxes.job.v then
+				if checkboxes.mine.v then 
 					minehelper.v = not minehelper.v
 				else
 					msg('У вас не включена функция Mine Helper.')  
@@ -693,8 +725,8 @@ function main()
 			end
 		end)
 		sampRegisterChatCommand("farm", function()
-			if job.v then
-				if farm.v then 
+			if checkboxes.job.v then
+				if checkboxes.farm.v then 
 					farmhelper.v = not farmhelper.v
 				else
 					msg('У вас не включена функция Farm Helper.')  
@@ -719,10 +751,6 @@ function main()
 		sampRegisterChatCommand('prm', function() 
 			prmwindow.v = not prmwindow.v  
 		end)
-		sampRegisterChatCommand('nickname', function() 
-			sss = sampGetPlayerNickname(id)
-			msg(sss)
-		end)
 		sampRegisterChatCommand('osmusic', function()
 			if osplayer.v then 
 				musicmenu.v = not musicmenu.v 
@@ -733,36 +761,31 @@ function main()
 		sampRegisterChatCommand('cc', function() 
 			clearchat() 
 		end)
-		sampRegisterChatCommand('camhack', function()
-			if flymode == 0 then
-					--setPlayerControl(playerchar, false)
-					displayRadar(false)
-					displayHud(false)	    
-					local posX, posY, posZ = getCharCoordinates(playerPed)
-					angZ = getCharHeading(playerPed)
-					angZ = angZ * -1.0
-					setFixedCameraPosition(posX, posY, posZ, 0.0, 0.0, 0.0)
-					angY = 0.0
-					--freezeCharPosition(playerPed, false)
-					--setCharProofs(playerPed, 1, 1, 1, 1, 1)
-					--setCharCollision(playerPed, false)
-					lockPlayerControl(true)
-					flymode = 1
-					--	sampSendChat('/anim 35')
-				end
-		end)
-    local ip, port = sampGetCurrentServerAddress()
-	if ip == '185.169.134.163' and port == 7777 then serverName = 'Rodina RP | Central District'
-	elseif ip == '185.169.134.60' and port == 7777 then serverName = 'Rodina RP | Southern District'
-	elseif ip == '185.169.134.62' and port == 7777 then serverName = 'Rodina RP | Northern District'
-	elseif ip == '185.169.134.108' and port == 7777 then serverName = 'Rodina RP | Eastern District'
-	end
+	font = renderCreateFont("Arial", cfg.timestamp.fontsize, 5)
     while true do
         wait(0)
         imgui.Process = window.v or prmwindow.v or cwindow.v or musicmenu.v or bushelper.v or minehelper.v or farmhelper.v or fishhelper.v or calcactive or keyboard.v or kbset.v
         imgui.ShowCursor = kbset.v
         if not keyboard.v then kbact.v = false end if keyboard.v then kbact.v = true end
         timech = timech + 1
+		if checkboxes.timestate.v  or moving then
+			if moving then
+				sampToggleCursor(true)
+				local x, y = getCursorPos()
+				cfg.timestamp.x = x
+				cfg.timestamp.y = y
+				if isKeyJustPressed(0x01) then
+					moving = false
+					sampToggleCursor(false)
+					inicfg.save(cfg, 'OSHelper.ini')
+				end
+			end
+			local date_table = os.date("*t")
+			local hour, minute, second = date_table.hour, date_table.min, date_table.sec
+			local result = string.format("%02d:%02d:%02d", hour, minute, second)
+
+			renderFontDrawText(font, result, cfg.timestamp.x, cfg.timestamp.y, "0xFF"..cfg.settings.xcolor)
+		end
         if fisheye.v then
 	        if isCurrentCharWeapon(PLAYER_PED, 34) and isKeyDown(2) then
 							cameraSetLerpFov(fov.v, fov.v, 1000, 1)
@@ -806,11 +829,11 @@ function main()
         if timeweather.v then
       		setTimeOfDay(time.v, 0)
       		forceWeatherNow(weather.v)
-    		end
+    	end
         inicfg.save(cfg, 'OSHelper.ini')
         if cfg.settings.cheatcode == '' then cfg.settings.cheatcode = 'oh' cheatcode = imgui.ImBuffer(tostring(cfg.settings.cheatcode), 256) end
     		if active.v == 1 and testCheat(cfg.settings.cheatcode) then window.v = not window.v end
-    		if drift.v then
+    		if checkboxes.drift.v then
 	    		if isCharInAnyCar(playerPed) then 
 						local car = storeCarCharIsInNoSave(playerPed)
 						local speed = getCarSpeed(car)
@@ -832,6 +855,10 @@ function main()
 					end
 				end
 				if infrun.v then mem.setint8(0xB7CEE4, 1) end
+				if autorun.v and isCharOnFoot(playerPed) and isKeyDown(0xA0) then 
+					wait(10)				
+					setGameKeyState(16, 0)
+				end
         
     -- hotkeys
         if not sampIsCursorActive() then
@@ -844,14 +871,14 @@ function main()
                 send('/fixmycar '..carid) 
             	end
 			end
-	     	if med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
+	     	if checkboxes.med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
 	     	local hpplayer = getCharHealth(PLAYER_PED)
-	     	if med.v and automed.v then 
+	     	if checkboxes.med.v and automed.v then 
 	     		hpcheck = hpmed.v + 1
 	     		if hpplayer < hpcheck then send('/usemed') wait(1000) end
 	     	end
-	     	if eat.v and isKeyDown(0x12) and wasKeyPressed(0x35) then send('/eat') end
-	     	if armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
+	     	if checkboxes.eat.v and isKeyDown(0x12) and wasKeyPressed(0x35) then send('/eat') end
+	     	if checkboxes.armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
 	     		if armourlvl > 89 then 
 		     		msg('У вас '..armourlvl..' процентов брони.')
@@ -867,9 +894,9 @@ function main()
 			     	end
 			    end
 	     	end
-	     	if drugs.v and isKeyDown(0x12) and wasKeyPressed(0x33) then send('/usedrugs 3') end
-	     	if rem.v and wasKeyPressed(0x52) then send('/repcar') end
-	     	if fill.v and wasKeyPressed(0x42) then send('/fillcar') end
+	     	if checkboxes.drugs.v and isKeyDown(0x12) and wasKeyPressed(0x33) then send('/usedrugs 3') end
+	     	if checkboxes.rem.v and wasKeyPressed(0x52) then send('/repcar') end
+	     	if checkboxes.fill.v and wasKeyPressed(0x42) then send('/fillcar') end
 	     	if finv.v and isKeyDown(0x46) and wasKeyPressed(0x31) then local veh, ped = storeClosestEntities(PLAYER_PED) local _, idinv = sampGetPlayerIdByCharHandle(ped) if _ then send('/faminvite '..idinv) end end
 	     	if fmenu.v and isKeyDown(0x12) and wasKeyPressed(0x46) then send('/fammenu') end
 	     	if lock.v and wasKeyPressed(0x4C) then send('/lock') end
@@ -919,6 +946,13 @@ function onScriptTerminate(s)
 	end
 end
 
+function join_rgba(r, g, b, a)
+    local rgba = b  -- b
+    rgba = bit.bor(rgba, bit.lshift(g, 8))  -- g
+    rgba = bit.bor(rgba, bit.lshift(r, 16)) -- r
+    rgba = bit.bor(rgba, bit.lshift(a, 24)) -- a
+    return rgba
+end
 
 function showInputHelp()
 	while true do
@@ -938,18 +972,8 @@ function showInputHelp()
 			local success = ffi.C.GetKeyboardLayoutNameA(KeyboardLayoutName)
 			local errorCode = ffi.C.GetLocaleInfoA(tonumber(ffi.string(KeyboardLayoutName), 16), 0x00000002, LocalInfo, BuffSize)
 			local localName = ffi.string(LocalInfo)
-			if cfg.settings.theme == 0 then
-				local stringtext = string.format("{c7c7c7}ID: {ff4747}%d, {c7c7c7}Caps: {ff4747}%s, {c7c7c7}Lang: {ff4747}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
-				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
-			end
-			if cfg.settings.theme == 1 then
-				local stringtext = string.format("{c7c7c7}ID: {00bd5c}%d, {c7c7c7}Caps: {00bd5c}%s, {c7c7c7}Lang: {00bd5c}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
-				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
-			end
-			if cfg.settings.theme == 2 then
-				local stringtext = string.format("{c7c7c7}ID: {e8a321}%d, {c7c7c7}Caps: {e8a321}%s, {c7c7c7}Lang: {e8a321}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
-				renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
-			end
+			local stringtext = string.format("{c7c7c7}ID: {"..cfg.settings.xcolor.."}%d, {c7c7c7}Caps: {"..cfg.settings.xcolor.."}%s, {c7c7c7}Lang: {"..cfg.settings.xcolor.."}%s{ffffff}", pID, getStrByState(capsState), string.match(localName, "([^%(]*)"))
+			renderFontDrawText(inputHelpText, stringtext, fib2, fib, 0xD7FFFFFF)
 		end
 		wait(0)
 	end
@@ -990,6 +1014,9 @@ function sampev.onSendEnterVehicle(id, pass)
 	        sampSendChat('/engine')
 	        wait(1000)
 	        sampSendChat('/lock')
+	        wait(1000)
+	        setVirtualKeyDown(74, true)
+	        setVirtualKeyDown(74, false)
 	    end
 	    end)
 	end
@@ -1081,6 +1108,14 @@ function piar()
 
 
 	end)
+end
+
+function createTextdraw()
+	sampTextdrawCreate(1215, '', tonumber(134.33334350586), tonumber(365.79998779297))
+	sampTextdrawSetLetterSizeAndColor(1215, tonumber(0.3), tonumber(1.2), '0xFF'..cfg.settings.xcolor)
+	sampTextdrawSetOutlineColor(1215, 0.5, 0xFF000000)
+	sampTextdrawSetAlign(1215, 2)
+	sampTextdrawSetStyle(1215, 1)
 end
 
 function getMusicList()
@@ -1287,7 +1322,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 					end
 				end
 				if automining_fillall == 2 then
-				    if automining_fillstatus2 ~= nil then
+				  if automining_fillstatus2 ~= nil then
 						if automining_fillstatus2 > 51 then
 							automining_fillall = 3
 						elseif text:find('Полка №2 | Свободна') then
@@ -1338,7 +1373,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 					text = text .. '\n' .. ' '
 					text = text .. '\n' .. color .. '>> {FFFFFF}На полках нет видеокарт, забрать прибыль не получится'
 					text = text .. '\n' .. color .. '>> {FFFFFF}На полках нет видеокарт, включить видеокарты не получится'
-					text = text .. '\n' .. color .. '>> {FFF}На полках нет видеокарт, залить охлаждающую жидкость не получится'
+					text = text .. '\n' .. color .. '>> {FFFFFF}На полках нет видеокарт, залить охлаждающую жидкость не получится'
 				else
 					text = text .. '\n' .. ' '
 					text = text .. '\n' .. color .. '>> {FFFFFF}Собрать прибыль'
@@ -1431,7 +1466,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 				return false
 		end
 	end
-	if autoprize.v then
+	if checkboxes.autoprize.v then
 		if id == 519 and text:find('»» Следующая страница') then 
 			sampSendDialogResponse(519, 1, 1, "")
 		elseif id == 519 and not text:find('»» Следующая страница') then 
@@ -1442,7 +1477,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 	if id == 520 then 
 		sampSendDialogResponse(520, 1, -1, "")
 	end
-	if autopay.v then 
+	if checkboxes.autopay.v then 
 		if id == 756 then  -- Список бизов
 			sampSendDialogResponse(756, 1, 0, "")
 		end
@@ -1453,7 +1488,7 @@ function sampev.onShowDialog(id, style, title, button1, button0, text)
 			return false
 		end
 	end
-	if autoscreen.v and id == 10044 then
+	if autoscreen.v and id == 44 then
 			lua_thread.create(function() 
 				wait(400)
 				sampSendChat('/time')
@@ -1535,7 +1570,7 @@ function sampev.onServerMessage(color, text)
 end
 
 function sampev.onServerMessage(color, text) --jobhelper
-	if bus.v then
+	if checkboxes.bus.v then
 			if text:find('^Премия за посадку пассажиров:') and not text:find('говорит:') then
 	        local premia = text:match('(%d+)')
 	        bhsalary = bhsalary + premia
@@ -1547,7 +1582,7 @@ function sampev.onServerMessage(color, text) --jobhelper
 	        bhstop = bhstop + 1
 	    end
 	end
-	if mine.v then
+	if checkboxes.mine.v then
 			if text:find('Вам добавлено: предмет "Камень". Чтобы открыть инвентарь,') and not text:find('говорит:') then
 	        mhstone = mhstone + 1
 	    elseif text:find('Вам добавлено: предмет "Камень" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
@@ -1574,19 +1609,19 @@ function sampev.onServerMessage(color, text) --jobhelper
 	    		mhgold = mhgold + tonumber(text:match("(%d+) шт"))  
 	    end
 	  end
-	  if farm.v then
-			if text:find('Вам добавлено: предмет "Лён". Чтобы открыть инвентарь,') and not text:find('говорит:') then
-	        mhlyon = mhlyon + 1
-	    elseif text:find('Вам добавлено: предмет "Лён" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
-	    		mhlyon = mhlyon + tonumber(text:match("(%d+) шт"))  
+	  if checkboxes.farm.v then
+			if text:find('^Вам добавлено: предмет "Лён". Чтобы открыть инвентарь,') then
+	        fhlyon = fhlyon + 1
+	    elseif text:find('^Вам добавлено: предмета "Лён" %((%d+) шт%). Чтобы открыть инвентарь,') or text:find('^Вам добавлено: предметов "Лён" %((%d+) шт%). Чтобы открыть инвентарь,') then
+	    		fhlyon = fhlyon + tonumber(text:match("(%d+) шт"))  
 	    end
-	    if text:find('Вам добавлено: предмет "Хлопок". Чтобы открыть инвентарь,') and not text:find('говорит:') then
-	        mhhlopok = mhlopok + 1
-	    elseif text:find('Вам добавлено: предмет "Хлопок" +%D(%d+) шт+%D. Чтобы открыть инвентарь,') and not text:find('говорит:') then
-	    		mhhlopok = mhlopok + tonumber(text:match("(%d+) шт"))  
+	    if text:find('^Вам добавлено: предмет "Хлопок". Чтобы открыть инвентарь,') and not text:find('говорит:') then
+	        fhhlopok = fhhlopok + 1
+	    elseif text:find('^Вам добавлено: предмета "Хлопок" %((%d+) шт%). Чтобы открыть инвентарь,') or text:find('^Вам добавлено: предметов "Хлопок" %((%d+) шт%). Чтобы открыть инвентарь,') then
+	    		fhhlopok = fhhlopok + tonumber(text:match("(%d+) шт"))  
 	  	end
 		end
-		if fish.v then
+		if checkboxes.fish.v then
 			if text:find('Вам добавлено: предмет "Ларец рыболова". Чтобы открыть инвентарь,') and not text:find('говорит:') then
 	        fishcase = fishcase + 1
 	    elseif text:find('Вам добавлено: предмет "Рыба (%A+)". Чтобы открыть инвентарь,') and not text:find('говорит:') then
@@ -1598,7 +1633,7 @@ end
 
 function eatchips()
 		lua_thread.create(function()
-			if eat.v and edelay.v > 0 then
+			if checkboxes.eat.v and edelay.v > 0 then
 				local eatdelay = cfg.settings.edelay * 60000 send('/eat') wait(eatdelay) return true
 			end
 		end)
@@ -1606,10 +1641,17 @@ end
 -- imgui
 local volume = imgui.ImInt(5)
 function imgui.OnDrawFrame()
-	if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
-	elseif cfg.settings.theme == 1 then themeSettings(3) cfg.settings.color = '{00bd5c}'
-	elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-	else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
+	if cfg.settings.theme == 0 then themeSettings(0) cfg.settings.color = '{ff4747}' cfg.settings.xcolor = 'FF4747'
+	elseif cfg.settings.theme == 1 then themeSettings(1) cfg.settings.color = '{00bd5c}' cfg.settings.xcolor = '00bd5c'
+	elseif cfg.settings.theme == 2 then themeSettings(2) cfg.settings.color = '{007ABE}' cfg.settings.xcolor = '007ABE'
+	elseif cfg.settings.theme == 3 then themeSettings(3) cfg.settings.color = '{00C091}' cfg.settings.xcolor = '00C091'
+	elseif cfg.settings.theme == 4 then themeSettings(4) cfg.settings.color = '{C27300}' cfg.settings.xcolor = 'C27300'
+	elseif cfg.settings.theme == 5 then themeSettings(5) cfg.settings.color = '{5D00C0}' cfg.settings.xcolor = '5D00C0'
+	elseif cfg.settings.theme == 6 then themeSettings(6) cfg.settings.color = '{8CBF00}' cfg.settings.xcolor = '8CBF00'
+	elseif cfg.settings.theme == 7 then themeSettings(7) cfg.settings.color = '{BF0072}' cfg.settings.xcolor = 'BF0072'
+	elseif cfg.settings.theme == 8 then themeSettings(8) cfg.settings.color = '{755B46}' cfg.settings.xcolor = '755B46'
+	elseif cfg.settings.theme == 9 then themeSettings(9) cfg.settings.color = '{5E5E5E}' cfg.settings.xcolor = '5E5E5E'
+	elseif cfg.settings.theme == 10 then themeSettings(10)
 	end
     if window.v then
     		imgui.SetNextWindowPos(imgui.ImVec2(resX / 2 , resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
@@ -1691,13 +1733,33 @@ function imgui.OnDrawFrame()
 				imgui.PushItemWidth(54.5) 
 				if imgui.InputInt(u8'##логин банк', logincard, 0, 0) then cfg.settings.logincard = logincard.v end
 				end
-				if imgui.Checkbox(u8'Автооплата налогов', autopay) then cfg.settings.autopay = autopay.v end
+				if imgui.Checkbox(u8'Автооплата налогов', checkboxes.autopay) then cfg.settings.autopay = checkboxes.autopay.v end
 				imgui.TextQuestion(u8'Не работает с новыми диалогами')
-				if imgui.Checkbox(u8'Автосбор ежедневных призов', autoprize) then cfg.settings.autoprize = autoprize.v end
+				if imgui.Checkbox(u8'Автосбор ежедневных призов', checkboxes.autoprize) then cfg.settings.autoprize = checkboxes.autoprize.v end
 				imgui.TextQuestion(u8'Автоматически собирает призы в /dw_prizes')
 				if imgui.Checkbox(u8'Mining Helper', mininghelper) then cfg.settings.mininghelper = mininghelper.v end
 				imgui.TextQuestion(u8'Сбор прибыли, охлаждение видеокарт в пару кликов')
 				if imgui.Checkbox(u8'Графическая клавиатура', keyboard) then cfg.settings.keyboard = keyboard.v end
+				if imgui.Checkbox(u8'Время на экране', checkboxes.timestate) then cfg.settings.timestate = checkboxes.timestate.v end
+				if checkboxes.timestate then
+					imgui.Text(u8'	Размер шрифта:')
+					imgui.SameLine()
+					imgui.PushItemWidth(72.5)  
+					if imgui.InputInt('##Fontsize', timestamp__fontsize, 1, 1) then 
+						if timestamp__fontsize.v < 1 then 
+							timestamp__fontsize.v = 1 
+						elseif timestamp__fontsize.v > 25 then
+							timestamp__fontsize.v = 25 
+						end 
+						cfg.timestamp.fontsize = timestamp__fontsize.v
+						font = renderCreateFont("Arial", cfg.timestamp.fontsize, 5) 
+					end
+					imgui.PopItemWidth()
+					imgui.Text(u8'	Изменить расположение:')
+					imgui.SameLine()
+					if imgui.Button('X', imgui.ImVec2(17.5, 20)) then moving = true end
+					imgui.TextQuestion(u8'Для установки позиции нажмите ЛКМ')
+				end
 				if imgui.Checkbox(u8'Autoscreen', autoscreen) then cfg.settings.autoscreen = autoscreen.v end
 				imgui.TextQuestion(u8'При появлении диалога с предложением, \nавтоматически пишет /time и нажимает F8')
 				--[[if imgui.Checkbox(u8'Тренировка капчи', capcha) then cfg.settings.capcha = capcha.v end
@@ -1724,16 +1786,32 @@ function imgui.OnDrawFrame()
 					if imgui.InputTextWithHint(u8"##Чит Код", cfg.settings.cheatcode, cheatcode) then cfg.settings.cheatcode = cheatcode.v end
 				end
 				--if cheatcode.v == '' then cheatcode.v = 'oh' cfg.settings.cheatcode = 'oh' end
-				imgui.offset(u8'Цвет темы: ') 
-					if imgui.Combo(u8'##Тема', theme, {u8'Красный', u8'Зеленый', u8'Желтый'}, -1) then cfg.settings.theme = theme.v save()
-					if cfg.settings.theme == 0 then themeSettings(1) color = '{ff4747}'
-					elseif cfg.settings.theme == 1 then themeSettings(3) color = '{00b052}'
-					elseif cfg.settings.theme == 2 then themeSettings(2) color = '{e8a321}'
-					--elseif cfg.settings.theme == 3 then themeSettings(4) color = '{ff4747}'
-					else cfg.settings.theme = 0 themeSettings(1) color = '{ff4747}'
+				imgui.offset(u8'Тема: ') 
+					if imgui.Combo(u8'##Тема', theme, {u8'Красный', u8'Зеленый', u8'Синий', u8'Салатовый', u8'Оранжевый', u8'Фиолетовый', u8'Токсичный', u8'Розовый', u8'Коричневая', u8'Серая', u8'Кастомизированная'}, -1) then cfg.settings.theme = theme.v save()
+						if cfg.settings.theme == 0 then themeSettings(0) color = '{ff4747}'
+						elseif cfg.settings.theme == 1 then themeSettings(1) color = '{00b052}'
+						elseif cfg.settings.theme == 2 then themeSettings(2) color = '{007ABE}'
+						elseif cfg.settings.theme == 3 then themeSettings(3) color = '{00C091}'
+						elseif cfg.settings.theme == 4 then themeSettings(4) color = '{C27300}'
+						elseif cfg.settings.theme == 5 then themeSettings(5) color = '{5D00C0}'
+						elseif cfg.settings.theme == 6 then themeSettings(6) color = '{8CBF00}'
+						elseif cfg.settings.theme == 7 then themeSettings(7) color = '{BF0072}'
+						elseif cfg.settings.theme == 8 then themeSettings(8) color = '{755B46}'
+						elseif cfg.settings.theme == 9 then themeSettings(9) color = '{5E5E5E}'
 					end
 				end
-				if imgui.Checkbox(u8'Приветственное сообщение', hello) then cfg.settings.hello = hello.v end
+				if theme.v == 10 then
+					imgui.Text(u8'	Цвет темы: ')
+			    imgui.SameLine()
+			    if imgui.ColorEdit3('##colortheme', colortheme, imgui.ColorEditFlags.NoInputs) then
+			       	color = join_rgba(colortheme.v[1] * 255, colortheme.v[2] * 255, colortheme.v[3] * 255, 0)
+					cfg.settings.r, cfg.settings.g, cfg.settings.b = colortheme.v[1], colortheme.v[2], colortheme.v[3]
+					cfg.settings.xcolor = ('%06X'):format(color)
+			        color = '{'..('%06X'):format(color)..'}'
+					cfg.settings.color = color
+    			end
+				end
+				if imgui.Checkbox(u8'Приветственное сообщение', checkboxes.hello) then cfg.settings.hello = checkboxes.hello.v end
 				imgui.SetCursorPosX(89)
 				--[[if imgui.Button(u8'RELOAD', imgui.ImVec2(150, 20)) then
 					showCursor(false, false)
@@ -1796,20 +1874,20 @@ function imgui.OnDrawFrame()
 				imgui.Separator()
 				if imgui.Checkbox(u8'OS Music', osplayer) then cfg.settings.osplayer = osplayer.v end
 				imgui.TextQuestion(u8'Активация: /osmusic\nЧтобы загрузить свои песни, откройте папку с игрой, \nдалее зайдите в moonloader/OS Helper/OS Music.')
-				if imgui.Checkbox(u8'Job Helper', job) then cfg.settings.job = job.v end
+				if imgui.Checkbox(u8'Job Helper', checkboxes.job) then cfg.settings.job = checkboxes.job.v end
 				imgui.TextQuestion(u8'Лучший помощник для вашей любимой работы')
-				if job.v then
+				if checkboxes.job.v then
 					imgui.Text('	') imgui.SameLine()
-					if imgui.Checkbox(u8'Bus Helper', bus) then cfg.settings.bus = bus.v end
+					if imgui.Checkbox(u8'Bus Helper', checkboxes.bus) then cfg.settings.bus = checkboxes.bus.v end
 					imgui.TextQuestion(u8'Активация: /bus\nПодсчёт заработка на работе автобусника')
 					imgui.Text('	') imgui.SameLine()
-					if imgui.Checkbox(u8'Mine Helper', mine) then cfg.settings.mine = mine.v end
+					if imgui.Checkbox(u8'Mine Helper', checkboxes.mine) then cfg.settings.mine = checkboxes.mine.v end
 					imgui.TextQuestion(u8'Активация: /mine\nПодсчёт заработка на работе шахтера')
 					imgui.Text('	') imgui.SameLine()
-					if imgui.Checkbox(u8'Farm Helper', farm) then cfg.settings.farm = farm.v end
+					if imgui.Checkbox(u8'Farm Helper', checkboxes.farm) then cfg.settings.farm = checkboxes.farm.v end
 					imgui.TextQuestion(u8'Активация: /farm\nПодсчёт заработка на работе фермера')
 					imgui.Text('	') imgui.SameLine()
-					if imgui.Checkbox(u8'Fish Helper', fish) then cfg.settings.fish = fish.v end
+					if imgui.Checkbox(u8'Fish Helper', checkboxes.fish) then cfg.settings.fish = checkboxes.fish.v end
 					imgui.TextQuestion(u8'Активация: /fish\nПодсчёт заработка на работе рыболова')
 				end
 			end
@@ -1858,6 +1936,7 @@ function imgui.OnDrawFrame()
 					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает БК Эдово №57!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
 				end
 				imgui.Separator()
+				if imgui.Checkbox(u8'Включение рекламы при заходе', prconnect) then cfg.settings.prconnect = prconnect.v end
 				imgui.Text(u8'Задержка: ')
 				imgui.SameLine()
 				imgui.PushItemWidth(40)
@@ -1935,25 +2014,25 @@ function character()
         	imgui.CenterText(u8'Персонаж')
         imgui.PopFont()
         imgui.Separator()
-        if imgui.Checkbox(u8'Бронежилет', armor) then cfg.settings.armor = armor.v end
+        if imgui.Checkbox(u8'Бронежилет', checkboxes.armor) then cfg.settings.armor = checkboxes.armor.v end
 				imgui.TextQuestion(u8'Использовать бронежилет: ALT + 1\nНастройка таймера доступна после включения главной функции')
-				if armor.v then imgui.Text('	') imgui.SameLine()  if imgui.Checkbox(u8'Армортаймер', armortimer) then cfg.settings.armortimer = armortimer.v end end
+				if checkboxes.armor.v then imgui.Text('	') imgui.SameLine()  if imgui.Checkbox(u8'Армортаймер', armortimer) then cfg.settings.armortimer = armortimer.v end end
 				if imgui.Checkbox(u8'Маска', mask) then cfg.settings.mask = mask.v end
 				imgui.TextQuestion(u8'Использовать маску: ALT + 2')
-				if imgui.Checkbox(u8'Наркотики (3 шт)', drugs) then cfg.settings.drugs = drugs.v end
+				if imgui.Checkbox(u8'Наркотики (3 шт)', checkboxes.drugs) then cfg.settings.drugs = checkboxes.drugs.v end
 				imgui.TextQuestion(u8'Использовать нарко: ALT + 3\nНастройка таймера и антиломки доступна после включения главной функции')
-				if drugs.v then 
+				if checkboxes.drugs.v then 
 					imgui.Text('	') imgui.SameLine()  
 					if imgui.Checkbox(u8'Наркотаймер', drugstimer) then cfg.settings.drugstimer = drugstimer.v end
 					imgui.Text('	') imgui.SameLine() 
 					if imgui.Checkbox(u8'Антиломка', antilomka) then cfg.settings.antilomka = antilomka.v end  
 				end
-				if imgui.Checkbox(u8'Аптечка', med) then cfg.settings.med = med.v end
+				if imgui.Checkbox(u8'Аптечка', checkboxes.med) then cfg.settings.med = checkboxes.med.v end
 				imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
-				if med.v then
+				if checkboxes.med.v then
 					imgui.Text('	') imgui.SameLine()
 					if imgui.Checkbox(u8'Автохилл', automed) then cfg.settings.automed = automed.v end
-					--[[if automed.v then
+					if automed.v then
 						imgui.Text('		HP:') imgui.SameLine() 
 						imgui.PushItemWidth(73) 
 						if imgui.InputInt("##автохилл", hpmed) then 
@@ -1966,11 +2045,13 @@ function character()
 							save() 
 						end
 						imgui.PopItemWidth()
-					end]]--
+					end
 				end
-				if imgui.Checkbox(u8'Еда', eat) then cfg.settings.eat = eat.v end
+				if imgui.Checkbox(u8'Автоускорение', autorun) then cfg.settings.autorun = autorun.v end
+				imgui.TextQuestion(u8'При нажатии на кнопку бега, персонаж переходит на быстрый бег')
+				if imgui.Checkbox(u8'Еда', checkboxes.eat) then cfg.settings.eat = checkboxes.eat.v end
 				imgui.TextQuestion(u8'Использовать чипсы: ALT + 5\nНастройка автоеды доступна после включения главной функции')
-				if eat.v then
+				if checkboxes.eat.v then
 					imgui.Text(u8'	Задержка:')
 					imgui.SameLine()
 					imgui.PushItemWidth(75)
@@ -1987,11 +2068,11 @@ function character()
 				if imgui.Checkbox(u8'Авто-кликер', balloon) then cfg.settings.balloon = balloon.v end
 				imgui.TextQuestion(u8'Активация: ALT + C (зажатие)\nКликер для сборки шара/выкапывания клада и т.п.')
 				if imgui.Checkbox(u8'Бесконечный бег', infrun) then cfg.settings.infrun = infrun.v end
-				imgui.TextQuestion(u8'Активация: автоматическая\nНе позволяет устать персонажу от бега')
+				imgui.TextQuestion(u8'Активация автоматическая\nНе позволяет устать персонажу от бега')
 				if imgui.Checkbox(u8'Skin Changer', vskin) then cfg.settings.vskin = vskin.v end 
 				imgui.TextQuestion(u8'Активация: /skin [ID]\nСкин виден только вам\nТак же, мы вам не советуем злоупотреблять 92, 99 и 320+ скинами,\nтак как они дают преимущество в беге')
 				if imgui.Checkbox(u8'Крафт оружия', gunmaker) then cfg.settings.gunmaker = gunmaker.v end
-				imgui.TextQuestion(u8'Скрафтить оружие: /cg')
+				imgui.TextQuestion(u8'Активация: /cg')
 				if gunmaker.v then
 					imgui.Text(u8'	Оружие: ')
 					imgui.SameLine()
@@ -2018,12 +2099,12 @@ function transport()
         		imgui.PopFont()
         		imgui.Separator()
 				if imgui.Checkbox(u8'AutoCar', autolock) then cfg.settings.autolock = autolock.v end
-				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей + включение двигателя')
+				imgui.TextQuestion(u8'Активация: сесть в машину\nАвтоматическое закрытие дверей, пристегивание и включение двигателя')
 				if imgui.Checkbox(u8'Открыть/Закрыть двери', lock) then cfg.settings.lock = lock.v end
 				imgui.TextQuestion(u8'Активация: L, K (аренд. т/с)')
-				if imgui.Checkbox(u8'Ремкомплект', rem) then cfg.settings.rem = rem.v end
+				if imgui.Checkbox(u8'Ремкомплект', checkboxes.rem) then cfg.settings.rem = checkboxes.rem.v end
 				imgui.TextQuestion(u8'Использовать ремкомплект: R')
-				if imgui.Checkbox(u8'Канистра', fill) then cfg.settings.fill = fill.v end
+				if imgui.Checkbox(u8'Канистра', checkboxes.fill) then cfg.settings.fill = checkboxes.fill.v end
 				imgui.TextQuestion(u8'Использовать канистру: B')
 				if imgui.Checkbox(u8'Спавн транспорта', spawn) then cfg.settings.spawn = spawn.v end
 				imgui.TextQuestion(u8'Использование: Колесико Мыши (нажатие)')
@@ -2031,7 +2112,7 @@ function transport()
 				imgui.TextQuestion(u8'Открыть шлагбаум: O')
 				if imgui.Checkbox(u8'+W moto/bike', plusw) then cfg.settings.plusw = plusw.v end
 				imgui.TextQuestion(u8'Использование: W (зажатие)\nКликер для велосипедов и мотоциклов')
-				if imgui.Checkbox(u8'Дрифт', drift) then cfg.settings.drift = drift.v end
+				if imgui.Checkbox(u8'Дрифт', checkboxes.drift) then cfg.settings.drift = checkboxes.drift.v end
 				imgui.TextQuestion(u8'Активация: LSHIFT (зажатие)\nУправление заносом')
 				--[[if imgui.Checkbox(u8'Цвета покраски', ballooncolor) then balloncolor = not balloncolor if ballooncolor then 
 						imgui.Image(imgbc, imgui.ImVec2(200, 200)) 
@@ -2195,7 +2276,7 @@ function themeSettings(theme)
  style.GrabRounding = 1
  style.WindowTitleAlign = imgui.ImVec2(0.5, 0.5)
  style.ButtonTextAlign = imgui.ImVec2(0.5, 0.5)
-	 if theme == 1 or nil then
+	 if theme == 0 or nil then
 	 	local style = imgui.GetStyle()
 		local colors = style.Colors
 		local clr = imgui.Col
@@ -2216,8 +2297,8 @@ function themeSettings(theme)
 		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
 		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
 		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
-		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.18, 0.22, 0.25, 1.00);
-		colors[clr.ScrollbarGrabActive]    = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
 		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
 		colors[clr.CheckMark]              = ImVec4(1.00, 0.28, 0.28, 1.00);
 		colors[clr.SliderGrab]             = ImVec4(1.00, 0.28, 0.28, 1.00);
@@ -2240,105 +2321,458 @@ function themeSettings(theme)
 		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
 		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
 		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
-	elseif theme == 2 then
-		local style = imgui.GetStyle()
-	    local colors = style.Colors
-	    local clr = imgui.Col
-	    local ImVec4 = imgui.ImVec4
-	    colors[clr.Text]                 = ImVec4(0.92, 0.92, 0.92, 1.00)
-	    colors[clr.TextDisabled]         = ImVec4(0.44, 0.44, 0.44, 1.00)
-	    colors[clr.WindowBg]             = ImVec4(0.06, 0.06, 0.06, 1.00)
-	    colors[clr.ChildWindowBg]        = ImVec4(0.00, 0.00, 0.00, 0.00)
-	    colors[clr.PopupBg]              = ImVec4(0.08, 0.08, 0.08, 0.94)
-	    colors[clr.ComboBg]              = ImVec4(0.08, 0.08, 0.08, 0.94)
-	    colors[clr.Border]               = ImVec4(0.51, 0.36, 0.15, 1.00)
-	    colors[clr.BorderShadow]         = ImVec4(0.00, 0.00, 0.00, 0.00)
-	    colors[clr.FrameBg]              = ImVec4(0.11, 0.11, 0.11, 1.00)
-	    colors[clr.FrameBgHovered]       = ImVec4(0.51, 0.36, 0.15, 1.00)
-	    colors[clr.FrameBgActive]        = ImVec4(0.78, 0.55, 0.21, 1.00)
-	    colors[clr.TitleBg]              = ImVec4(0.51, 0.36, 0.15, 1.00)
-	    colors[clr.TitleBgActive]        = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.TitleBgCollapsed]     = ImVec4(0.00, 0.00, 0.00, 0.51)
-	    colors[clr.MenuBarBg]            = ImVec4(0.11, 0.11, 0.11, 1.00)
-	    colors[clr.ScrollbarBg]          = ImVec4(0.06, 0.06, 0.06, 0.53)
-	    colors[clr.ScrollbarGrab]        = ImVec4(0.21, 0.21, 0.21, 1.00)
-	    colors[clr.ScrollbarGrabHovered] = ImVec4(0.47, 0.47, 0.47, 1.00)
-	    colors[clr.ScrollbarGrabActive]  = ImVec4(0.81, 0.83, 0.81, 1.00)
-	    colors[clr.CheckMark]            = ImVec4(0.78, 0.55, 0.21, 1.00)
-	    colors[clr.SliderGrab]           = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.SliderGrabActive]     = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.Button]               = ImVec4(0.51, 0.36, 0.15, 1.00)
-	    colors[clr.ButtonHovered]        = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.ButtonActive]         = ImVec4(0.78, 0.55, 0.21, 1.00)
-	    colors[clr.Header]               = ImVec4(0.51, 0.36, 0.15, 1.00)
-	    colors[clr.HeaderHovered]        = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.HeaderActive]         = ImVec4(0.93, 0.65, 0.14, 1.00)
-	    colors[clr.Separator]            = ImVec4(0.21, 0.21, 0.21, 1.00)
-	    colors[clr.SeparatorHovered]     = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.SeparatorActive]      = ImVec4(0.78, 0.55, 0.21, 1.00)
-	    colors[clr.ResizeGrip]           = ImVec4(0.21, 0.21, 0.21, 1.00)
-	    colors[clr.ResizeGripHovered]    = ImVec4(0.91, 0.64, 0.13, 1.00)
-	    colors[clr.ResizeGripActive]     = ImVec4(0.78, 0.55, 0.21, 1.00)
-	    colors[clr.CloseButton]          = ImVec4(0.47, 0.47, 0.47, 1.00)
-	    colors[clr.CloseButtonHovered]   = ImVec4(0.98, 0.39, 0.36, 1.00)
-	    colors[clr.CloseButtonActive]    = ImVec4(0.98, 0.39, 0.36, 1.00)
-	    colors[clr.PlotLines]            = ImVec4(0.61, 0.61, 0.61, 1.00)
-	    colors[clr.PlotLinesHovered]     = ImVec4(1.00, 0.43, 0.35, 1.00)
-	    colors[clr.PlotHistogram]        = ImVec4(0.90, 0.70, 0.00, 1.00)
-	    colors[clr.PlotHistogramHovered] = ImVec4(1.00, 0.60, 0.00, 1.00)
-	    colors[clr.TextSelectedBg]       = ImVec4(0.26, 0.59, 0.98, 0.35)
-	    colors[clr.ModalWindowDarkening] = ImVec4(0.80, 0.80, 0.80, 0.35)
-	elseif theme == 3 then
+	elseif theme == 1 then -- зеленая
 		local style = imgui.GetStyle()
 		local colors = style.Colors
 		local clr = imgui.Col
 		local ImVec4 = imgui.ImVec4
-	    colors[clr.Text]                   = ImVec4(0.90, 0.90, 0.90, 1.00)
-	    colors[clr.TextDisabled]           = ImVec4(0.60, 0.60, 0.60, 1.00)
-	    colors[clr.WindowBg]               = ImVec4(0.08, 0.08, 0.08, 1.00)
-	    colors[clr.ChildWindowBg]          = ImVec4(0.10, 0.10, 0.10, 1.00)
-	    colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 1.00)
-	    colors[clr.Border]                 = ImVec4(0.70, 0.70, 0.70, 0.40)
-	    colors[clr.BorderShadow]           = ImVec4(0.00, 0.00, 0.00, 0.00)
-	    colors[clr.FrameBg]                = ImVec4(0.15, 0.15, 0.15, 1.00)
-	    colors[clr.FrameBgHovered]         = ImVec4(0.19, 0.19, 0.19, 0.71)
-	    colors[clr.FrameBgActive]          = ImVec4(0.34, 0.34, 0.34, 0.79)
-	    colors[clr.TitleBg]                = ImVec4(0.00, 0.69, 0.33, 0.80)
-	    colors[clr.TitleBgActive]          = ImVec4(0.00, 0.74, 0.36, 1.00)
-	    colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.69, 0.33, 0.50)
-	    colors[clr.MenuBarBg]              = ImVec4(0.00, 0.80, 0.38, 1.00)
-	    colors[clr.ScrollbarBg]            = ImVec4(0.16, 0.16, 0.16, 1.00)
-	    colors[clr.ScrollbarGrab]          = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.00, 0.82, 0.39, 1.00)
-	    colors[clr.ScrollbarGrabActive]    = ImVec4(0.00, 1.00, 0.48, 1.00)
-	    colors[clr.ComboBg]                = ImVec4(0.20, 0.20, 0.20, 0.99)
-	    colors[clr.CheckMark]              = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.SliderGrab]             = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.SliderGrabActive]       = ImVec4(0.00, 0.77, 0.37, 1.00)
-	    colors[clr.Button]                 = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.ButtonHovered]          = ImVec4(0.00, 0.82, 0.39, 1.00)
-	    colors[clr.ButtonActive]           = ImVec4(0.00, 0.87, 0.42, 1.00)
-	    colors[clr.Header]                 = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.HeaderHovered]          = ImVec4(0.00, 0.76, 0.37, 0.57)
-	    colors[clr.HeaderActive]           = ImVec4(0.00, 0.88, 0.42, 0.89)
-	    colors[clr.Separator]              = ImVec4(1.00, 1.00, 1.00, 0.40)
-	    colors[clr.SeparatorHovered]       = ImVec4(1.00, 1.00, 1.00, 0.60)
-	    colors[clr.SeparatorActive]        = ImVec4(1.00, 1.00, 1.00, 0.80)
-	    colors[clr.ResizeGrip]             = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.ResizeGripHovered]      = ImVec4(0.00, 0.76, 0.37, 1.00)
-	    colors[clr.ResizeGripActive]       = ImVec4(0.00, 0.86, 0.41, 1.00)
-	    colors[clr.CloseButton]            = ImVec4(0.00, 0.82, 0.39, 1.00)
-	    colors[clr.CloseButtonHovered]     = ImVec4(0.00, 0.88, 0.42, 1.00)
-	    colors[clr.CloseButtonActive]      = ImVec4(0.00, 1.00, 0.48, 1.00)
-	    colors[clr.PlotLines]              = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.PlotLinesHovered]       = ImVec4(0.00, 0.74, 0.36, 1.00)
-	    colors[clr.PlotHistogram]          = ImVec4(0.00, 0.69, 0.33, 1.00)
-	    colors[clr.PlotHistogramHovered]   = ImVec4(0.00, 0.80, 0.38, 1.00)
-	    colors[clr.TextSelectedBg]         = ImVec4(0.00, 0.69, 0.33, 0.72)
-	    colors[clr.ModalWindowDarkening]   = ImVec4(0.17, 0.17, 0.17, 0.48)
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.00, 0.69, 0.33, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.00, 0.69, 0.33, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.00, 0.87, 0.42, 1.00);
+		colors[clr.Button]                 = ImVec4(0.00, 0.69, 0.33, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.00, 0.82, 0.39, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.00, 0.87, 0.42, 1.00);
+		colors[clr.Header]                 = ImVec4(0.00, 0.69, 0.33, 1.00);
+	  colors[clr.HeaderHovered]          = ImVec4(0.00, 0.76, 0.37, 0.57);
+	  colors[clr.HeaderActive]           = ImVec4(0.00, 0.88, 0.42, 0.89);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 2 then -- синяя
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.00, 0.48, 0.75, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.00, 0.48, 0.75, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.00, 0.46, 0.71, 1.00);
+		colors[clr.Button]                 = ImVec4(0.00, 0.48, 0.75, 1.00);
+		colors[clr.ButtonHovered]          = ImVec4(0.00, 0.71, 0.94, 1.00);
+		colors[clr.ButtonActive]           = ImVec4(0.00, 0.46, 0.71, 1.00);
+		colors[clr.Header]                 = ImVec4(0.00, 0.48, 0.75, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.00, 0.71, 0.94, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.00, 0.46, 0.71, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 3 then -- салатовая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.00, 0.75, 0.57, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.00, 0.75, 0.57, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.00, 0.71, 0.46, 1.00);
+		colors[clr.Button]                 = ImVec4(0.00, 0.75, 0.57, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.00, 0.94, 0.60, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.00, 0.71, 0.46, 1.00);
+		colors[clr.Header]                 = ImVec4(0.00, 0.75, 0.57, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.00, 0.94, 0.60, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.00, 0.71, 0.46, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 4 then -- оранжевая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.76, 0.45, 0.00, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.76, 0.45, 0.00, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.71, 0.38, 0.00, 1.00);
+		colors[clr.Button]                 = ImVec4(0.76, 0.45, 0.00, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.94, 0.45, 0.00, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.71, 0.38, 0.00, 1.00);
+		colors[clr.Header]                 = ImVec4(0.76, 0.45, 0.00, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.94, 0.45, 0.00, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.71, 0.38, 0.00, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 5 then -- фиолетовая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.37, 0.00, 0.75, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.37, 0.00, 0.75, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.31, 0.00, 0.71, 1.00);
+		colors[clr.Button]                 = ImVec4(0.37, 0.00, 0.75, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.47, 0.00, 0.94, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.31, 0.00, 0.71, 1.00);
+		colors[clr.Header]                 = ImVec4(0.37, 0.00, 0.75, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.47, 0.00, 0.94, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.31, 0.00, 0.71, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 6 then -- токсичная
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.55, 0.75, 0.00, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.55, 0.75, 0.00, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.49, 0.71, 0.00, 1.00);
+		colors[clr.Button]                 = ImVec4(0.55, 0.75, 0.00, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.64, 0.94, 0.00, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.49, 0.71, 0.00, 1.00);
+		colors[clr.Header]                 = ImVec4(0.55, 0.75, 0.00, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.64, 0.94, 0.00, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.49, 0.71, 0.00, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 7 then -- розовая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.75, 0.000, 0.45, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.75, 0.000, 0.45, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.71, 0.00, 0.51, 1.00);
+		colors[clr.Button]                 = ImVec4(0.75, 0.000, 0.45, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.94, 0.00, 0.73, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.71, 0.00, 0.51, 1.00);
+		colors[clr.Header]                 = ImVec4(0.75, 0.000, 0.45, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.94, 0.00, 0.73, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.71, 0.00, 0.51, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 8 then -- коричневая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.46, 0.36, 0.28, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.46, 0.36, 0.28, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.42, 0.33, 0.26, 1.00);
+		colors[clr.Button]                 = ImVec4(0.46, 0.36, 0.28, 1.00);
+	  colors[clr.ButtonHovered]          = ImVec4(0.58, 0.46, 0.37, 1.00);
+	  colors[clr.ButtonActive]           = ImVec4(0.42, 0.33, 0.26, 1.00);
+		colors[clr.Header]                 = ImVec4(0.46, 0.36, 0.28, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.58, 0.46, 0.37, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.42, 0.33, 0.26, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 9 then -- Серая
+	  local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.24, 0.24, 0.24, 1.00);
+		colors[clr.CheckMark]              = ImVec4(0.37, 0.37, 0.37, 1.00);
+		colors[clr.SliderGrab]             = ImVec4(0.37, 0.37, 0.37, 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(0.33, 0.33, 0.33, 1.00);
+		colors[clr.Button]                 = ImVec4(0.37, 0.37, 0.37, 1.00);
+		colors[clr.ButtonHovered]          = ImVec4(0.46, 0.46, 0.46, 1.00);
+		colors[clr.ButtonActive]           = ImVec4(0.33, 0.33, 0.33, 1.00);
+		colors[clr.Header]                 = ImVec4(0.37, 0.37, 0.37, 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(0.46, 0.46, 0.46, 1.00);
+		colors[clr.HeaderActive]           = ImVec4(0.33, 0.33, 0.33, 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
+	elseif theme == 10 then -- Кастомная
+	  	local style = imgui.GetStyle()
+		local colors = style.Colors
+		local clr = imgui.Col
+		local ImVec4 = imgui.ImVec4
+		colors[clr.Text]                   = ImVec4(0.95, 0.96, 0.98, 1.00);
+		colors[clr.TextDisabled]           = ImVec4(0.29, 0.29, 0.29, 1.00);
+		colors[clr.WindowBg]               = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.ChildWindowBg]          = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94);
+		colors[clr.Border]                 = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.BorderShadow]           = ImVec4(1.00, 1.00, 1.00, 0.10);
+		colors[clr.FrameBg]                = ImVec4(0.22, 0.22, 0.22, 1.00);
+		colors[clr.FrameBgHovered]         = ImVec4(0.18, 0.18, 0.18, 1.00);
+		colors[clr.FrameBgActive]          = ImVec4(0.09, 0.12, 0.14, 1.00);
+		colors[clr.TitleBg]                = ImVec4(0.14, 0.14, 0.14, 0.81);
+		colors[clr.TitleBgActive]          = ImVec4(0.14, 0.14, 0.14, 1.00);
+		colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51);
+		colors[clr.MenuBarBg]              = ImVec4(0.20, 0.20, 0.20, 1.00);
+		colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.ScrollbarGrab]          = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ScrollbarGrabHovered]   = ImVec4(0.12, 0.12, 0.12, 1.00);
+		colors[clr.ScrollbarGrabActive]    = ImVec4(0.36, 0.36, 0.36, 1.00);
+		colors[clr.ComboBg]                = ImVec4(0.02, 0.02, 0.02, 0.39);
+		colors[clr.CheckMark]              = ImVec4(colortheme.v[1], colortheme.v[2], colortheme.v[3], 1.00);
+		colors[clr.SliderGrab]             = ImVec4(colortheme.v[1], colortheme.v[2], colortheme.v[3], 1.00);
+		colors[clr.SliderGrabActive]       = ImVec4(colortheme.v[1] / (1/0.75), colortheme.v[2] / (1/0.75), colortheme.v[3] / (1/0.75), 1.00);
+		colors[clr.Button]                 = ImVec4(colortheme.v[1], colortheme.v[2], colortheme.v[3], 1.00);
+		colors[clr.ButtonHovered]          = ImVec4(colortheme.v[1] / (1/2), colortheme.v[2] / (1/2), colortheme.v[3] / (1/2), 1.00);
+		colors[clr.ButtonActive]           = ImVec4(colortheme.v[1] / (1/0.75), colortheme.v[2] / (1/0.75), colortheme.v[3] / (1/0.75), 1.00);
+		colors[clr.Header]                 = ImVec4(colortheme.v[1], colortheme.v[2], colortheme.v[3], 1.00);
+		colors[clr.HeaderHovered]          = ImVec4(colortheme.v[1] / (1/2), colortheme.v[2] / (1/2), colortheme.v[3] / (1/2), 1.00);
+		colors[clr.HeaderActive]           = ImVec4(colortheme.v[1] / (1/0.75), colortheme.v[2] / (1/0.75), colortheme.v[3] / (1/0.75), 1.00);
+		colors[clr.ResizeGrip]             = ImVec4(1.00, 0.28, 0.28, 1.00);
+		colors[clr.ResizeGripHovered]      = ImVec4(1.00, 0.39, 0.39, 1.00);
+		colors[clr.ResizeGripActive]       = ImVec4(1.00, 0.19, 0.19, 1.00);
+		colors[clr.CloseButton]            = ImVec4(0.40, 0.39, 0.38, 0.16);
+		colors[clr.CloseButtonHovered]     = ImVec4(0.40, 0.39, 0.38, 0.39);
+		colors[clr.CloseButtonActive]      = ImVec4(0.40, 0.39, 0.38, 1.00);
+		colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00);
+		colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00);
+		colors[clr.PlotHistogram]          = ImVec4(1.00, 0.21, 0.21, 1.00);
+		colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.18, 0.18, 1.00);
+		colors[clr.TextSelectedBg]         = ImVec4(1.00, 0.32, 0.32, 1.00);
+		colors[clr.ModalWindowDarkening]   = ImVec4(0.26, 0.26, 0.26, 0.60);
 	end
 end
-
 
 themeSettings()
 
