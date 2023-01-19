@@ -1,6 +1,6 @@
 -- script
 script_name('OS Helper')
-script_version('1.4 pre-final')
+script_version('1.4.1 pre-final')
 script_author('deveeh')
 
 -- libraries
@@ -1936,7 +1936,6 @@ function imgui.OnDrawFrame()
 					if imgui.InputTextWithHint(u8"##prstring", u8"/vr Работает БК Эдово №57!", stringmsg) then cfg.settings.stringmsg = stringmsg.v end
 				end
 				imgui.Separator()
-				if imgui.Checkbox(u8'Включение рекламы при заходе', prconnect) then cfg.settings.prconnect = prconnect.v end
 				imgui.Text(u8'Задержка: ')
 				imgui.SameLine()
 				imgui.PushItemWidth(40)
