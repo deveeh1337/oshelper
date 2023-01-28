@@ -19,7 +19,7 @@
 
 -- script
 script_name('OS Helper')
-script_version('1.5 beta')
+script_version('1.5 release')
 script_author('OS Production') 
 
 -- libraries
