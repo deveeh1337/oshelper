@@ -19,7 +19,7 @@
 
 -- script
 script_name('OS Helper')
-script_version('1.5 release')
+script_version('1.5.1 release')
 script_author('OS Production') 
 
 -- libraries
@@ -82,7 +82,6 @@ local cfg = inicfg.load({
 		spawn = false,
 		prmanager = false,
 		vr1 = false,
-		automed = false,
 		hpmed = 20,
 		prstring = false,
 		antilomka = false,
@@ -218,7 +217,6 @@ local checkboxes = {
 	keyboard_pos = imgui.ImVec2(cfg.keyboard.posx, cfg.keyboard.posy),
 	autoeat = imgui.ImBool(cfg.settings.autoeat),
 	open = imgui.ImBool(cfg.settings.open),
-	automed = imgui.ImBool(cfg.settings.automed),
 	delay = imgui.ImInt(cfg.settings.delay),
 	plusw = imgui.ImBool(cfg.settings.plusw),
 	prmanager = imgui.ImBool(cfg.settings.prmanager),
@@ -720,11 +718,6 @@ while true do
             	end
 			end
 	     	if checkboxes.med.v and isKeyDown(0x12) and wasKeyPressed(0x34) then send('/usemed') end
-	     	local hpplayer = getCharHealth(PLAYER_PED)
-	     	if checkboxes.med.v and checkboxes.automed.v then 
-	     		hpcheck = ints.hpmed.v + 1
-	     		if hpplayer < hpcheck then send('/usemed') wait(1000) end
-	     	end
 	     	if checkboxes.eat.v and isKeyDown(0x12) and wasKeyPressed(0x35) then send('/eat') end
 	     	if checkboxes.armor.v and isKeyDown(0x12) and wasKeyPressed(0x31) then
 	     		local armourlvl = sampGetPlayerArmor(id)
@@ -1282,24 +1275,6 @@ function character()
 		end
 		if imgui.Checkbox(u8'Аптечка', checkboxes.med) then cfg.settings.med = checkboxes.med.v end
 		imgui.TextQuestion(u8'Использовать аптечку: ALT + 4\nНастройка автохилла доступна после включения главной функции')
-		if checkboxes.med.v then
-			imgui.Text('	') imgui.SameLine()
-			if imgui.Checkbox(u8'Автохилл', checkboxes.automed) then cfg.settings.automed = checkboxes.automed.v end
-			if checkboxes.automed.v then
-				imgui.Text('		HP:') imgui.SameLine() 
-				imgui.PushItemWidth(73) 
-				if imgui.InputInt("##автохилл", ints.hpmed) then 
-					if ints.hpmed.v > 99 then
-						ints.hpmed.v = 99
-					elseif ints.hpmed.v < 1 then
-						ints.hpmed.v = 1
-					end
-					cfg.settings.hpmed = ints.hpmed.v 
-					save() 
-				end
-				imgui.PopItemWidth()
-			end
-		end
 		if imgui.Checkbox(u8'Автоускорение', checkboxes.autorun) then cfg.settings.autorun = checkboxes.autorun.v end
 		imgui.TextQuestion(u8'При нажатии на кнопку бега, персонаж переходит на быстрый бег')
 		if imgui.Checkbox(u8'Еда', checkboxes.eat) then cfg.settings.eat = checkboxes.eat.v end
