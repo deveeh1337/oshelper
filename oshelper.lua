@@ -19,7 +19,7 @@
 
 -- script
 script_name('OS Helper')
-script_version('1.5.1 release')
+script_version('1.5.2 release')
 script_author('OS Production') 
 
 -- libraries
@@ -944,7 +944,7 @@ function imgui.OnDrawFrame()
 				imgui.Separator()
 				imgui.Text(u8'OS Helper - совершенно новый скрипт,\n направленный на облегчение жизни \n как простым игрокам, так и крупным бизнесменам. \n Данное ПО не выступает в роли чита или стиллера.\n Его основная задача превратить \n однотипные действия в более \n комфортный экспириенс во время игры.')
 				imgui.Text('')
-				imgui.Text(u8'Разработчики:') imgui.SameLine() imgui.Link('https://vk.com/osprod_samp', 'OS Production')
+				imgui.Text(u8'Разработчики:') imgui.SameLine() imgui.Link('https://vk.com/osprodsamp', 'OS Production')
 				imgui.Text(u8'Нашли баг?') imgui.SameLine() imgui.Link('https://vk.com/topic-215734333_49024979', u8'Вам сюда!')
 			end
 			if menu == 8 then
