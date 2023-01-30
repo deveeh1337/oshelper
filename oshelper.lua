@@ -19,7 +19,7 @@
 
 -- script
 script_name('OS Helper')
-script_version('1.5.2 release')
+script_version('1.5.3 release')
 script_author('OS Production') 
 
 -- libraries
@@ -63,7 +63,6 @@ local cfg = inicfg.load({
 		armor = false,
 		hello = true,
 		med = false,
-		autoeat = false,
 		bus = false,
 		mine = false,
 		farm = false,
@@ -127,7 +126,6 @@ local cfg = inicfg.load({
 		prsh5 = 0,
 		buttonjump = 0,
 		delay = 30,
-		edelay = 0,
 		fisheye = false,
 		autoprize = false,
 		logincard = 123456,
@@ -215,7 +213,6 @@ local checkboxes = {
 	autorun = imgui.ImBool(cfg.settings.autorun),
 	kbact = imgui.ImBool(cfg.keyboard.kbact),
 	keyboard_pos = imgui.ImVec2(cfg.keyboard.posx, cfg.keyboard.posy),
-	autoeat = imgui.ImBool(cfg.settings.autoeat),
 	open = imgui.ImBool(cfg.settings.open),
 	delay = imgui.ImInt(cfg.settings.delay),
 	plusw = imgui.ImBool(cfg.settings.plusw),
@@ -284,7 +281,6 @@ local ints = {
 	time = imgui.ImInt(cfg.settings.time),
 	weather = imgui.ImInt(cfg.settings.weather),
 	active = imgui.ImInt(cfg.settings.active),
-	edelay = imgui.ImInt(cfg.settings.edelay),
 	gunmode = imgui.ImInt(cfg.settings.gunmode),
 	chatstrings = imgui.ImInt(cfg.settings.chatstrings),
 	chatfontsize = imgui.ImInt(cfg.settings.chatfontsize),
@@ -1279,18 +1275,6 @@ function character()
 		imgui.TextQuestion(u8'При нажатии на кнопку бега, персонаж переходит на быстрый бег')
 		if imgui.Checkbox(u8'Еда', checkboxes.eat) then cfg.settings.eat = checkboxes.eat.v end
 		imgui.TextQuestion(u8'Использовать чипсы: ALT + 5\nНастройка автоеды доступна после включения главной функции')
-		if checkboxes.eat.v then
-			imgui.Text(u8'	Задержка:')
-			imgui.SameLine()
-			imgui.PushItemWidth(75)
-			if imgui.InputInt("##edelay", ints.edelay) then cfg.settings.edelay = ints.edelay.v save() 
-				if ints.edelay.v > 0 then eatchips() end
-			end
-			imgui.SameLine()
-			imgui.Text(u8'мин.')
-			imgui.TextQuestion(u8'При вводе 0 в поле, функция будет выключена')
-			imgui.PopItemWidth() 
-		end
 		if imgui.Checkbox(u8'Z-Timer', checkboxes.ztimerstatus) then cfg.settings.ztimerstatus = checkboxes.ztimerstatus.v end
 		imgui.TextQuestion(u8'После выдачи метки Z, начнется отсчёт 600 секунд')
 		if imgui.Checkbox(u8'Авто-кликер', checkboxes.balloon) then cfg.settings.balloon = checkboxes.balloon.v end
@@ -2326,14 +2310,6 @@ function sampev.onServerMessage(color, text) --jobhelper
 	end
 end
 
-
-function eatchips()
-	lua_thread.create(function()
-		if checkboxes.eat.v and ints.edelay.v > 0 then
-			local eatdelay = cfg.settings.edelay * 60000 send('/eat') wait(eatdelay) return true
-		end
-	end)
-end
 
 keyboards = {
 	{ -- Без NumPad
