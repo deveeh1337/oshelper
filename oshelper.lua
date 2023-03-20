@@ -664,11 +664,6 @@ while true do
 	            calcactive = false
 	      	end
         end
-        if (isKeyDown(VK_T) and wasKeyPressed(VK_T))then
-			if(not sampIsChatInputActive() and not sampIsDialogActive())then
-				sampSetChatInputEnabled(true)
-			end
-		end
         if checkboxes.timeweather.v then
       		setTimeOfDay(ints.time.v, 0)
       		forceWeatherNow(ints.weather.v)
