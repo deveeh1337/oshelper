@@ -1,54 +1,41 @@
--- OS Helper 2.0 release - GitHub auto-updater
--- РћР±РЅРѕРІР»СЏРµС‚ РјРЅРѕР¶РµСЃС‚РІРѕ С„Р°Р№Р»РѕРІ Рё РїР°РїРѕРє РїРѕ СЃРїРёСЃРєСѓ РІ update.json.
--- Р¤РѕСЂРјР°С‚ update.json:
--- {
---   "latest": "1.5.4 release",
---   "updateurl": "https://raw.githubusercontent.com/deveeh1337/oshelper/master/oshelper.lua",
---   "base_url": "https://raw.githubusercontent.com/deveeh1337/oshelper/master",
---   "files": [
---     "OSHelper.lua",
---     "OSHelper/core/main.lua",
---     "OSHelper/services/input.lua",
---     ...
---   ]
--- }
--- РљРѕРЅС„РёРі РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (OSHelper/config.json) РЅРёРєРѕРіРґР° РЅРµ РїРµСЂРµР·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ.
-
 local M = {}
 local dlstatus = require('moonloader').download_status
 
--- РЎСЃС‹Р»РєР° РЅР° raw update.json РЅР° GitHub
-local UPDATE_MANIFEST_URL = 'https://raw.githubusercontent.com/deveeh1337/oshelper/master/update.json'
+-- Ссылка через jsDelivr CDN (работает стабильно со встроенным загрузчиком MoonLoader)
+local UPDATE_MANIFEST_URL = 'https://cdn.jsdelivr.net/gh/deveeh1337/oshelper@master/update.json'
 
 local CHECK_FILE = getWorkingDirectory() .. '\\OSHelper-update.json'
 local UPDATE_ROOT = getWorkingDirectory()
 
 local function log(message)
-    if type(msg) == 'function' then
-        pcall(msg, '[OS Helper] ' .. tostring(message))
-    end
+    print('[OS Helper] ' .. tostring(message))
 end
 
 local function downloadSync(url, path)
     local finished = false
-    local success = false
 
     downloadUrlToFile(url, path, function(_, status)
-        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-            success = true
-            finished = true
-        elseif status == dlstatus.STATUSEX_ENDDOWNLOAD then
+        if status == dlstatus.STATUSEX_ENDDOWNLOAD or status == dlstatus.STATUS_ENDDOWNLOADDATA then
             finished = true
         end
     end)
 
-    local timeout = 30000
+    local timeout = 5000
     while not finished and timeout > 0 do
         wait(50)
         timeout = timeout - 50
     end
 
-    return success and doesFileExist(path)
+    if doesFileExist(path) then
+        local file = io.open(path, 'r')
+        if file then
+            local size = file:seek('end')
+            file:close()
+            return size > 0
+        end
+    end
+
+    return false
 end
 
 local function readJson(path)
@@ -70,16 +57,10 @@ local function normalizeRemotePath(path)
     path = tostring(path or ''):gsub('\\', '/')
     path = path:gsub('^/+', '')
 
-    if path == '' or path == '.' or path == '..' then
+    if path == '' or path == '.' or path == '..' or path:find('%.%.', 1, true) then
         return nil
     end
 
-    -- Р—Р°С‰РёС‚Р° РѕС‚ РїСѓС‚РµР№ СЃ ".."
-    if path:find('%.%.', 1, true) then
-        return nil
-    end
-
-    -- РќРёРєРѕРіРґР° РЅРµ РїРµСЂРµР·Р°РїРёСЃС‹РІР°РµРј РєРѕРЅС„РёРі РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
     if path == 'OSHelper/config.json' then
         return nil
     end
@@ -119,7 +100,7 @@ local function currentVersionCode()
     local code = tonumber(script and script.version_code)
     if code then return code end
 
-    local version = tostring(script and script.version or '2.0 release')
+    local version = tostring(script and script.version or '1.0 release')
     local major, minor, patch = parseVersion(version)
     return versionToNumber(major, minor, patch)
 end
@@ -127,35 +108,26 @@ end
 local function applyManifest(manifest)
     local filesList = manifest.files
     if type(filesList) ~= 'table' or #filesList == 0 then
-        return false, 'files list is missing or empty'
+        return false, 'Список файлов пуст'
     end
 
     local baseUrl = tostring(manifest.base_url or ''):gsub('/+$', '')
     if baseUrl == '' then
-        return false, 'base_url is missing'
+        return false, 'base_url отсутствует'
     end
-
-    local normalizedFiles = {}
 
     for _, rawPath in ipairs(filesList) do
         local path = normalizeRemotePath(rawPath)
         if path then
-            normalizedFiles[#normalizedFiles + 1] = path
-        end
-    end
+            local url = baseUrl .. '/' .. path:gsub('\\', '/')
+            local destination = getLocalPath(path)
 
-    if #normalizedFiles == 0 then
-        return false, 'no valid files to update'
-    end
+            ensureParentDirectory(destination)
+            log('Загрузка: ' .. path)
 
-    for _, path in ipairs(normalizedFiles) do
-        local url = baseUrl .. '/' .. path:gsub('\\', '/')
-        local destination = getLocalPath(path)
-
-        ensureParentDirectory(destination)
-
-        if not downloadSync(url, destination) then
-            return false, 'download failed: ' .. path
+            if not downloadSync(url, destination) then
+                return false, 'Ошибка скачивания: ' .. path
+            end
         end
     end
 
@@ -163,16 +135,14 @@ local function applyManifest(manifest)
 end
 
 function M.check()
-    if UPDATE_MANIFEST_URL:find('deveeh1337', 1, true)
-        or UPDATE_MANIFEST_URL:find('YOUR_REPOSITORY', 1, true) then
-        return false
-    end
+    log('=== Запуск проверки обновлений ===')
 
     if doesFileExist(CHECK_FILE) then
         os.remove(CHECK_FILE)
     end
 
     if not downloadSync(UPDATE_MANIFEST_URL, CHECK_FILE) then
+        log('ОШИБКА: Не удалось скачать update.json')
         if doesFileExist(CHECK_FILE) then os.remove(CHECK_FILE) end
         return false
     end
@@ -181,6 +151,7 @@ function M.check()
     os.remove(CHECK_FILE)
 
     if not manifest or type(manifest) ~= 'table' then
+        log('ОШИБКА: Ошибка чтения JSON')
         return false
     end
 
@@ -193,25 +164,25 @@ function M.check()
     local remoteCode = versionToNumber(rMajor, rMinor, rPatch)
     local localCode = currentVersionCode()
 
+    log(('Версии: Локальная (%d) | На сервере (%d)'):format(localCode, remoteCode))
+
     if remoteCode == 0 or remoteCode <= localCode then
+        log('У вас установлена актуальная версия.')
         return false
     end
 
-    -- updateurl РјРѕР¶РЅРѕ РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ, РµСЃР»Рё РµСЃС‚СЊ files, РЅРѕ РѕСЃС‚Р°РІРёРј РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
-    local updateUrl = tostring(manifest.updateurl or '')
-
-    log('Р”РѕСЃС‚СѓРїРЅР° РЅРѕРІР°СЏ РІРµСЂСЃРёСЏ: ' .. remoteVersionStr)
+    log('Найдено новое обновление: ' .. remoteVersionStr)
 
     local ok, err = applyManifest(manifest)
     if not ok then
-        log('РћС€РёР±РєР° Р°РІС‚РѕРѕР±РЅРѕРІР»РµРЅРёСЏ: ' .. tostring(err))
+        log('ОШИБКА при автообновлении: ' .. tostring(err))
         return false
     end
 
-    log('OS Helper РѕР±РЅРѕРІР»С‘РЅ РґРѕ РІРµСЂСЃРёРё ' .. remoteVersionStr)
+    log('Успешно обновлено до версии ' .. remoteVersionStr .. '! Перезагрузка...')
 
     lua_thread.create(function()
-        wait(700)
+        wait(1000)
         thisScript():reload()
     end)
 
