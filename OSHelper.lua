@@ -5,7 +5,6 @@ script_author('OS Production')
 require 'lib.moonloader'
 
 local updater = require('OSHelper.services.updater')
-updater.check()
 
 local requiredLibs = {
     {name = 'Mimgui', module = 'mimgui'},
@@ -53,5 +52,14 @@ function main()
         thisScript():unload()
         return
     end
+    lua_thread.create(function(updaterRef)
+        if type(updaterRef) ~= 'table' or type(updaterRef.check) ~= 'function' then
+            print('[OS Helper] Модуль обновлений недоступен, пропускаем проверку.')
+            return
+        end
+
+        -- Прямой вызов без pcall, чтобы wait() внутри updater.lua не ломал поток Lua
+        updaterRef.check()
+    end, updater)
     Bootstrap.start()
 end
