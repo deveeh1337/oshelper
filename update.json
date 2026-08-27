@@ -1,6 +1,6 @@
 {
   "latest": "2.0 release",
-  "updateurl": "https://raw.githubusercontent.com/deveeh1337/oshelper/master/migration.lua",
+  "updateurl": "https://raw.githubusercontent.com/deveeh1337/oshelper/master/oshelper.lua",
   "base_url": "https://raw.githubusercontent.com/deveeh1337/oshelper/master",
   "files": [
     "OSHelper.lua",
