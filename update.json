@@ -1,4 +1,22 @@
 {
   "latest": "1.5.4 release",
-  "updateurl": "https://raw.githubusercontent.com/deveeh/oshelper/master/oshelper.lua"
+  "updateurl": "https://raw.githubusercontent.com/deveeh1337/oshelper/master/migration.lua",
+  "base_url": "https://raw.githubusercontent.com/deveeh1337/oshelper/master",
+  "files": [
+    "OSHelper.lua",
+    "OSHelper/core/main.lua",
+    "OSHelper/core/context.lua",
+    "OSHelper/core/bootstrap.lua",
+    "OSHelper/core/config.lua",
+    "OSHelper/services/input.lua",
+    "OSHelper/services/vehicle.lua",
+    "OSHelper/services/time_weather.lua",
+    "OSHelper/services/session.lua",
+    "OSHelper/services/updater.lua",
+    "OSHelper/ui/main.lua",
+    "OSHelper/ui/widgets.lua",
+    "OSHelper/features/events.lua",
+    "OSHelper/functions/environment.lua",
+    "OSHelper/functions/optimization.lua"
+  ]
 }
